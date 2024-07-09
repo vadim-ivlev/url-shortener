@@ -14,6 +14,7 @@ go test -count=1 ./...
 
 
 echo "Building shortenertest ---------------------------"
+# go build -buildvcs=false -o cmd/shortener/shortener cmd/shortener/main.go
 go build -o cmd/shortener/shortener cmd/shortener/main.go
 
 echo "Running static tests -----------------------------"
@@ -35,7 +36,8 @@ SERVER_PORT=8082
 echo "SERVER_PORT=$SERVER_PORT"
 shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration4$ -binary-path=cmd/shortener/shortener -server-port=$SERVER_PORT 
 
+echo "Running Iteration 5 tests ------------------------"
+SERVER_PORT=8082
+echo "SERVER_PORT=$SERVER_PORT"
+shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration5$ -binary-path=cmd/shortener/shortener -server-port=$SERVER_PORT
 
-# go build -buildvcs=false -o cmd/shortener/shortener cmd/shortener/main.go
-# shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration1$ -binary-path=cmd/shortener/shortener
-# shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration2$ -source-path=.

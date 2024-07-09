@@ -9,20 +9,52 @@
 // и функция, которая будет инициализировать поля этой структуры.
 // По мере усложнения конфигурации вы сможете добавлять необходимые поля в вашу структуру и инициализировать их.
 
+// Инкремент 5
+// Задание по треку «Сервис сокращения URL»
+// Добавьте возможность конфигурировать сервис с помощью переменных окружения:
+// 	Адрес запуска HTTP-сервера — с помощью переменной SERVER_ADDRESS.
+// 	Базовый адрес результирующего сокращённого URL — с помощью переменной BASE_URL.
+// Приоритет параметров сервера должен быть таким:
+// 	Если указана переменная окружения, то используется она.
+// 	Если нет переменной окружения, но есть аргумент командной строки (флаг), то используется он.
+// 	Если нет ни переменной окружения, ни флага, то используется значение по умолчанию.
+
 package config
 
 import (
 	"flag"
 	"fmt"
+
+	"github.com/caarlos0/env/v11"
 )
+
+type envConfig struct {
+	ServerAddress string `env:"SERVER_ADDRESS"`
+	BaseURL       string `env:"BASE_URL"`
+}
 
 var Address string
 var BaseURL string
 
 func ParseCommandLine() {
+	// Читаем параметры командной строки с значениями по умолчанию
 	flag.StringVar(&Address, "a", "localhost:8080", "HTTP server address")
 	flag.StringVar(&BaseURL, "b", "http://localhost:8080", "Base URL")
 	flag.Parse()
+
+	// Читаем переменные окружения
+	cfg := envConfig{}
+	if err := env.Parse(&cfg); err != nil {
+		fmt.Printf("%+v\n", err)
+	}
+
+	// Если переменные окружения заданы, то используем их
+	if cfg.ServerAddress != "" {
+		Address = cfg.ServerAddress
+	}
+	if cfg.BaseURL != "" {
+		BaseURL = cfg.BaseURL
+	}
 
 	fmt.Println("Server Address:", Address)
 	fmt.Println("Shortened Base URL:", BaseURL)
