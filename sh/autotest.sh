@@ -29,6 +29,12 @@ shortenertest -test.v -test.run=^TestIteration2$ -source-path=.
 echo "Running Iteration 3 tests ------------------------"
 shortenertest -test.v -test.run=^TestIteration3$ -source-path=.
 
+echo "Running Iteration 4 tests ------------------------"
+# SERVER_PORT=$(random unused-port)
+SERVER_PORT=8082
+echo "SERVER_PORT=$SERVER_PORT"
+shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration4$ -binary-path=cmd/shortener/shortener -server-port=$SERVER_PORT 
+
 
 # go build -buildvcs=false -o cmd/shortener/shortener cmd/shortener/main.go
 # shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration1$ -binary-path=cmd/shortener/shortener

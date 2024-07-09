@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/vadim-ivlev/url-shortener/internal/config"
 	"github.com/vadim-ivlev/url-shortener/internal/shortener"
 	"github.com/vadim-ivlev/url-shortener/internal/storage"
 )
@@ -27,7 +28,7 @@ func ShortenURLHandler(w http.ResponseWriter, r *http.Request) {
 	shortID := shortener.Shorten(originalURL)
 	savedID := storage.Set(shortID, originalURL)
 	// Сгенерировать короткий URL
-	shortURL := "http://localhost:8080/" + savedID
+	shortURL := config.BaseURL + "/" + savedID
 
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "text/plain")
@@ -36,20 +37,16 @@ func ShortenURLHandler(w http.ResponseWriter, r *http.Request) {
 
 // RedirectHandler обрабатывает GET-запросы для перенаправления на оригинальный URL.
 func RedirectHandler(w http.ResponseWriter, r *http.Request) {
-	// chiShortID := chi.URLParam(r, "id")
-	// shortID := r.URL.Path[1:]
-	// fmt.Printf("   shortID: '%s'\n", shortID)
-	// fmt.Printf("chiShortID: '%s'\n", chiShortID)
 
-	shortID := chi.URLParam(r, "id")
-
-	if shortID == "" {
+	// если id пустой, то вернуть ошибку
+	id := chi.URLParam(r, "id")
+	if id == "" {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
 
-	// Получить оригинальный URL и перенаправить
-	originalURL := storage.Get(shortID)
+	// Получить оригинальный URL по id и перенаправить
+	originalURL := storage.Get(id)
 	if originalURL == "" {
 		http.Error(w, "URL not found", http.StatusBadRequest)
 		return
