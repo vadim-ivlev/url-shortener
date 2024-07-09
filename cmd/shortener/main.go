@@ -10,5 +10,5 @@ import (
 func main() {
 	storage.Create()
 	fmt.Println("Server starting at http://localhost:8080/")
-	server.Serve()
+	server.ServeChi()
 }

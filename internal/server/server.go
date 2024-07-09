@@ -3,32 +3,18 @@ package server
 import (
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/vadim-ivlev/url-shortener/internal/handlers"
 )
 
-// addRouts добавляет обработчики маршрутов к мультиплексору.
-func addRouts(mux *http.ServeMux) {
-	// Зарегистрировать обработчики
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodPost {
-			handlers.ShortenURLHandler(w, r)
-		} else if r.Method == http.MethodGet {
-			handlers.RedirectHandler(w, r)
-		} else {
-			http.Error(w, "Invalid request method", http.StatusBadRequest)
-		}
-	})
-}
+// Using Chi router
+func ServeChi() {
+	r := chi.NewRouter()
 
-func Serve() {
-	// Создать мультиплексор
-	mux := http.NewServeMux()
+	r.Post("/", handlers.ShortenURLHandler)
+	r.Get("/{id}", handlers.RedirectHandler)
 
-	// Зарегистрировать маршруты и обработчики
-	addRouts(mux)
-
-	// Запустить сервер на порту 8080
-	err := http.ListenAndServe(":8080", mux)
+	err := http.ListenAndServe(":8080", r)
 	if err != nil {
 		panic(err)
 	}

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -8,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/vadim-ivlev/url-shortener/internal/storage"
 )
@@ -106,6 +108,10 @@ func TestRedirectHandler(t *testing.T) {
 			id := getID(tt.want.shortURL)
 			req := httptest.NewRequest(http.MethodGet, "/"+id, nil)
 			rec := httptest.NewRecorder()
+
+			// Добавим параметр в URL используя контекст
+			req = WithURLParam(req, "id", id)
+
 			// Вызов обработчика
 			RedirectHandler(rec, req)
 
@@ -117,11 +123,23 @@ func TestRedirectHandler(t *testing.T) {
 	}
 }
 
+// WithURLParam возвращает указатель на объект запроса
+// с добавленными URL-параметрами в новом объекте chi.Context.
+// https://haykot.dev/blog/til-testing-parametrized-urls-with-chi-router/
+// https://github.com/go-chi/chi/issues/76
+func WithURLParam(r *http.Request, key, value string) *http.Request {
+	chiCtx := chi.NewRouteContext()
+	chiCtx.URLParams.Add(key, value)
+	newCtx := context.WithValue(r.Context(), chi.RouteCtxKey, chiCtx)
+	req := r.WithContext(newCtx)
+	return req
+}
+
 // возвращает послледнюю часть URL (после 22 символа) или "" если URL короче
 func getID(url string) (id string) {
 	if len(url) > 22 {
 		id = url[22:]
 	}
-	fmt.Printf("getId() = %v\n", id)
+	fmt.Printf("getId()   : '%v'\n", id)
 	return
 }

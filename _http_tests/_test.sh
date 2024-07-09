@@ -16,13 +16,11 @@ fi
 
 
 
-response=$( curl -s -fail -X POST "$ENDPOINT" -H "Content-Type: text/plain;" -d "$ORIGINAL_URL" )
-short_url=$(echo "$response" | tail -n 1)
+post_response=$( curl -s -fail -X POST "$ENDPOINT" -H "Content-Type: text/plain;" -d "$ORIGINAL_URL" )
+printf "\npost_response>>>>>>>>>>>>\n $post_response \npost_response<<<<<<<<<<<<\n\n"
 
+short_url=$(echo "$post_response" | tail -n 1)
+printf "\nshort_url>>>>>>>>>>>>\n $short_url \nshort_url<<<<<<<<<<<<\n\n"
 
-printf "\nresponse>>>>>>>>>>>>\n$response\nresponse<<<<<<<<<<<<\n\n"
-printf "\nshort_url>>>>>>>>>>>>\n$short_url\nshort_url<<<<<<<<<<<<\n\n"
-
-response=$( curl -s -fail -X GET $short_url )
-
-printf "\nresponse>>>>>>>>>>>>\n$response\nresponse<<<<<<<<<<<<\n\n"
+get_response=$( curl -s -fail -X GET $short_url )
+printf "\nget_response>>>>>>>>>>>>\n $get_response \nget_response<<<<<<<<<<<<\n\n"
