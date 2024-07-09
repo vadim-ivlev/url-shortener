@@ -23,17 +23,17 @@ func TestShorten(t *testing.T) {
 		{
 			name:    "empty value",
 			args:    args{value: ""},
-			wantKey: "short1",
+			wantKey: "811C9DC5",
 		},
 		{
-			name:    "non-empty value",
+			name:    "google",
 			args:    args{value: "https://www.google.com"},
-			wantKey: "short2",
+			wantKey: "F870F1E9",
 		},
 		{
-			name:    "another non-empty value",
+			name:    "youtube",
 			args:    args{value: "https://www.youtube.com"},
-			wantKey: "short3",
+			wantKey: "4AED1C05",
 		},
 	}
 	for _, tt := range tests {

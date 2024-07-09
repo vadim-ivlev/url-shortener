@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -29,27 +30,27 @@ var tests = []struct {
 	},
 	{
 		name: "google",
-		args: args{key: "short1", value: "https://www.google.com"},
-		want: "short1",
+		args: args{key: "F870F1E9", value: "https://www.google.com"},
+		want: "F870F1E9",
 	},
 	{
 		name: "youtube",
-		args: args{key: "short2", value: "https://www.youtube.com"},
-		want: "short2",
+		args: args{key: "4AED1C05", value: "https://www.youtube.com"},
+		want: "4AED1C05",
 	},
 	{
 		name: "youtube2",
 		args: args{key: "short4", value: "https://www.youtube.com"},
-		want: "short2",
+		want: "4AED1C05",
 	},
 	{
 		name: "empty key youtube",
 		args: args{key: "", value: "https://www.youtube.com"},
-		want: "short2",
+		want: "4AED1C05",
 	},
 	{
 		name: "empty value",
-		args: args{key: "short3", value: ""},
+		args: args{key: "empty0", value: ""},
 		want: "",
 	},
 }
@@ -59,7 +60,7 @@ func TestSet(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := Set(tt.args.key, tt.args.value)
 			assert.Equal(t, tt.want, got)
-			// fmt.Printf("Name = %v, Key = %v, Value = %v, Want = %v, Got = %v\n", tt.name, tt.args.key, tt.args.value, tt.want, got)
+			fmt.Printf("Name = %v, Key = %v, Value = %v, Want = %v, Got = %v\n", tt.name, tt.args.key, tt.args.value, tt.want, got)
 		})
 	}
 }

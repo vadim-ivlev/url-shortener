@@ -45,7 +45,7 @@ var tests = []struct {
 		want: want{
 			postReturnCode: http.StatusCreated,
 			getReturnCode:  http.StatusTemporaryRedirect,
-			shortURL:       "http://localhost:8080/short1",
+			shortURL:       "http://localhost:8080/F870F1E9",
 			contentType:    "text/plain",
 		},
 	},
@@ -55,7 +55,7 @@ var tests = []struct {
 		want: want{
 			postReturnCode: http.StatusCreated,
 			getReturnCode:  http.StatusTemporaryRedirect,
-			shortURL:       "http://localhost:8080/short2",
+			shortURL:       "http://localhost:8080/4AED1C05",
 			contentType:    "text/plain",
 		},
 	},
@@ -65,7 +65,7 @@ var tests = []struct {
 		want: want{
 			postReturnCode: http.StatusCreated,
 			getReturnCode:  http.StatusTemporaryRedirect,
-			shortURL:       "http://localhost:8080/short1",
+			shortURL:       "http://localhost:8080/F870F1E9",
 			contentType:    "text/plain",
 		},
 	},
@@ -80,7 +80,8 @@ func TestShortenURLHandler(t *testing.T) {
 			ShortenURLHandler(rec, req)
 			// Проверка ответа
 			assert.Equal(t, tt.want.postReturnCode, rec.Code)
-			assert.Equal(t, tt.want.shortURL, strings.TrimSpace(rec.Body.String()))
+			bodyString := strings.TrimSpace(rec.Body.String())
+			assert.Equal(t, tt.want.shortURL, bodyString)
 			assert.Contains(t, rec.Header().Get("Content-Type"), tt.want.contentType)
 
 		})
