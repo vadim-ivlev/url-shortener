@@ -24,4 +24,6 @@ vendor/
 
 metricstest*
 shortenertest*
+statictest*
+
 .DS_Store
