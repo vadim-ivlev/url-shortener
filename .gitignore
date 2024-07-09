@@ -21,3 +21,7 @@ vendor/
 # IDEs directories
 .idea
 .vscode
+
+metricstest*
+shortenertest*
+.DS_Store
