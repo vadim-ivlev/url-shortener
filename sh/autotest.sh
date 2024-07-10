@@ -41,3 +41,6 @@ SERVER_PORT=8082
 echo "SERVER_PORT=$SERVER_PORT"
 shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration5$ -binary-path=cmd/shortener/shortener -server-port=$SERVER_PORT
 
+
+echo "Running Iteration 6 tests ------------------------"
+shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration6$ -source-path=.
