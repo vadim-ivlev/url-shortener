@@ -13,6 +13,7 @@ func ServeChi(address string) {
 	r := chi.NewRouter()
 	r.Use(logger.RequestLogger)
 	r.Post("/", handlers.ShortenURLHandler)
+	r.Post("/api/shorten", handlers.APIShortenHandler)
 	r.Get("/{id}", handlers.RedirectHandler)
 
 	err := http.ListenAndServe(address, r)
