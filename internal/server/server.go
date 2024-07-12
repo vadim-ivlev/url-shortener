@@ -11,9 +11,11 @@ import (
 // Using Chi router
 func ServeChi(address string) {
 	r := chi.NewRouter()
+
 	r.Use(logger.RequestLogger)
 	r.Post("/", handlers.ShortenURLHandler)
 	r.Get("/{id}", handlers.RedirectHandler)
+
 	r.Route("/api", func(r chi.Router) {
 		r.Use(contentTypeJSON)
 		r.Post("/shorten", handlers.APIShortenHandler)

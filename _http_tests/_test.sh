@@ -29,7 +29,7 @@ printf "\nget_response>>>>>>>>>>>>\n $get_response \nget_response<<<<<<<<<<<<\n\
 
 #--------------------
 
-echo "--------------------------------------------------"
+echo "=================================================="
 echo "Doing POST $ENDPOINT/api/shorten -d '{\"url\":\"$ORIGINAL_URL\"}' "
 post_response=$( curl -s -fail -X POST "$ENDPOINT/api/shorten" -H "Content-Type: text/plain;" -d "{\"url\":\"$ORIGINAL_URL\"}" )
 printf "\npost_response>>>>>>>>>>>>\n $post_response \npost_response<<<<<<<<<<<<\n\n"
