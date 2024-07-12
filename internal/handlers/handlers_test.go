@@ -99,8 +99,7 @@ func TestShortenURLHandler(t *testing.T) {
 	}
 }
 
-// TODO: check actual JSON response, and Content-Type
-func TestApiShortenHandler(t *testing.T) {
+func TestAPIShortenHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, "/api/shorten", strings.NewReader(`{"url":"`+tt.url+`"}`))
@@ -111,7 +110,8 @@ func TestApiShortenHandler(t *testing.T) {
 			assert.Equal(t, tt.want.postReturnCode, rec.Code)
 			bodyString := strings.TrimSpace(rec.Body.String())
 			assert.Contains(t, bodyString, tt.want.shortURL)
-			// assert.Contains(t, rec.Header().Get("Content-Type"), "application/json")
+			assert.Contains(t, rec.Header().Get("Content-Type"), "application/json")
+			fmt.Printf("Content-Type: %v\n", rec.Header().Get("Content-Type"))
 		})
 	}
 }

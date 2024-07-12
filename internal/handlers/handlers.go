@@ -69,7 +69,10 @@ func APIShortenHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"error":"Internal server error"}`))
+		// http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -80,13 +83,23 @@ func APIShortenHandler(w http.ResponseWriter, r *http.Request) {
 	var req apiShortenRequest
 	err = json.Unmarshal(body, &req)
 	if err != nil {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		// http.Error(w, "Invalid request", http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Unmarshal error"})
 		return
 	}
 
 	originalURL := req.URL
 	if originalURL == "" {
-		http.Error(w, "Empty URL", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		// w.WriteHeader(201)
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Write([]byte(`{"error":"Empty URL1"}`))
+		// json.NewEncoder(w).Encode(struct {
+		// 	Error string `json:"error"`
+		// }{Error: "Empty URL"})
+		// json.NewEncoder(w).Encode(map[string]string{"error": "Empty URL"})
 		return
 	}
 

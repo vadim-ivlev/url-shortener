@@ -17,6 +17,8 @@ type loggingResponseWriter struct {
 	status int
 	// размер ответа
 	size int
+	// content-type ответа
+	contentType string
 }
 
 // переопределяем метод Write для захвата размера ответа
@@ -25,6 +27,8 @@ func (r *loggingResponseWriter) Write(b []byte) (int, error) {
 	size, err := r.ResponseWriter.Write(b)
 	// захватываем размер ответа
 	r.size += size
+	// захватываем content-type ответа
+	r.contentType = r.Header().Get("Content-Type")
 	return size, err
 }
 
@@ -49,6 +53,8 @@ func InitializeLogger() {
 // - Сведения об ответах должны содержать код статуса и размер содержимого ответа.
 func RequestLogger(h http.Handler) http.Handler {
 	logFn := func(w http.ResponseWriter, r *http.Request) {
+		// TODO:
+		// w.Header().Set("Content-Type", "application/json")
 		// встраиваем оригинальный http.ResponseWriter в loggingResponseWriter
 		logRespWriter := loggingResponseWriter{ResponseWriter: w}
 
@@ -66,6 +72,7 @@ func RequestLogger(h http.Handler) http.Handler {
 			Dur("duration", duration).
 			Int("size", logRespWriter.size).
 			Int("status", logRespWriter.status).
+			Str("content-type", logRespWriter.contentType).
 			Msg("")
 
 	}
