@@ -46,3 +46,6 @@ shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration6$ -source-path=.
 
 echo "Running Iteration 7 tests ------------------------"
 shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration7$ -binary-path=cmd/shortener/shortener -source-path=.
+
+echo "Running Iteration 8 tests ------------------------"
+shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration8$ -binary-path=cmd/shortener/shortener

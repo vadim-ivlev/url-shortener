@@ -19,6 +19,8 @@ type loggingResponseWriter struct {
 	size int
 	// content-type ответа
 	contentType string
+	// content-encoding ответа
+	contentEncoding string
 }
 
 // переопределяем метод Write для захвата размера ответа
@@ -29,6 +31,8 @@ func (r *loggingResponseWriter) Write(b []byte) (int, error) {
 	r.size += size
 	// захватываем content-type ответа
 	r.contentType = r.Header().Get("Content-Type")
+	// захватываем content-encoding ответа
+	r.contentEncoding = r.Header().Get("Content-Encoding")
 	return size, err
 }
 
@@ -65,14 +69,17 @@ func RequestLogger(h http.Handler) http.Handler {
 
 		uri := r.RequestURI
 		method := r.Method
+		acceptEncoding := r.Header.Get("Accept-Encoding")
 		duration := time.Since(start)
 		log.Info().
 			Str("URI", uri).
 			Str("method", method).
 			Dur("duration", duration).
+			Str("accept-encoding", acceptEncoding).
 			Int("size", logRespWriter.size).
 			Int("status", logRespWriter.status).
 			Str("content-type", logRespWriter.contentType).
+			Str("content-encoding", logRespWriter.contentEncoding).
 			Msg("")
 
 	}
