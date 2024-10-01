@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"io"
+	"strings"
 
 	"net/http"
 
@@ -35,7 +36,6 @@ func generateShortURL(originalURL string) string {
 
 // ShortenURLHandler обрабатывает POST-запросы для создания короткого URL.
 func ShortenURLHandler(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -90,15 +90,13 @@ func APIShortenHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"error":"Internal server error"}`))
+		w.Write([]byte(`{"error":"` + strings.ReplaceAll(err.Error(), `"`, ` `) + `"}`))
 		return
 	}
 
-	type apiShortenRequest struct {
+	var req struct {
 		URL string `json:"url"`
 	}
-
-	var req apiShortenRequest
 	err = json.Unmarshal(body, &req)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)

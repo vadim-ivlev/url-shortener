@@ -23,11 +23,14 @@ type DoubleMap struct {
 
 // Create порождает новый экземпляр DoubleMap.
 func Create() {
+	// Не был ли DoubleMap уже создан
+	if dm != nil {
+		return
+	}
 	dm = &DoubleMap{
 		valueToKey: make(map[string]string),
 		keyToValue: make(map[string]string),
 	}
-	// fmt.Println("storage package initialized")
 	log.Info().Msg("storage package initialized")
 }
 
