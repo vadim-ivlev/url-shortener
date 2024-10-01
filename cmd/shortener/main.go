@@ -19,5 +19,6 @@ func main() {
 	if err != nil {
 		log.Warn().Err(err).Msg("Filestorage not found. Probably this is the first launch.")
 	}
+	storage.PrintKeyValue()
 	server.ServeChi(config.Address)
 }

@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/caarlos0/env/v11"
 )
 
@@ -41,7 +43,7 @@ func ParseCommandLine() {
 		FileStoragePath = cfg.FileStoragePath
 	}
 
-	fmt.Println("Server Address:", Address)
-	fmt.Println("Shortened Base URL:", BaseURL)
-	fmt.Println("File Storage Path:", FileStoragePath)
+	log.Info().Msg("Server Address: " + Address)
+	log.Info().Msg("Shortened Base URL: " + BaseURL)
+	log.Info().Msg("File Storage Path: " + FileStoragePath)
 }

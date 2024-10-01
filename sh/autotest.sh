@@ -49,3 +49,10 @@ shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration7$ -binary-path=c
 
 echo "Running Iteration 8 tests ------------------------"
 shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration8$ -binary-path=cmd/shortener/shortener
+
+echo "Running Iteration 9 tests ------------------------"
+# TEMP_FILE=$(random tempfile)
+# tempfile is not available in macos
+TEMP_FILE=$(mktemp -p /tmp)
+echo "TEMP_FILE=$TEMP_FILE"
+shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration9$ -binary-path=cmd/shortener/shortener -source-path=. -file-storage-path=$TEMP_FILE

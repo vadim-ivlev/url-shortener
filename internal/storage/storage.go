@@ -3,6 +3,8 @@ package storage
 import (
 	"fmt"
 	"sync"
+
+	"github.com/rs/zerolog/log"
 )
 
 // dm —  экземпляр DoubleMap.
@@ -25,7 +27,8 @@ func Create() {
 		valueToKey: make(map[string]string),
 		keyToValue: make(map[string]string),
 	}
-	fmt.Println("storage package initialized")
+	// fmt.Println("storage package initialized")
+	log.Info().Msg("storage package initialized")
 }
 
 // Set сохраняет ключ и значени в DoubleMap.
@@ -61,9 +64,11 @@ func Get(key string) (value string) {
 }
 
 func PrintKeyValue() {
-	fmt.Println("Storage: key value >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+	fmt.Println("Storage: # key value >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+	n := 1
 	for k, v := range dm.keyToValue {
-		fmt.Printf("%v %v\n", k, v)
+		fmt.Printf("%4v %v %v\n", n, k, v)
+		n++
 	}
 	fmt.Println("Storage: <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
 }
