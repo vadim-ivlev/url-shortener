@@ -32,20 +32,21 @@ func Create() {
 // Сначала проверяется, существует ли значение уже в карте valueToKey. Если да, то возвращается существующий ключ.
 // Если значение не существует, оно сохраняется с новым ключом и возвращается новый ключ.
 // Новые отображения добавляются в обе карты.
-func Set(key, value string) string {
+// Возвращает ключ и флаг, указывающий, было ли значение добавлено в карту.
+func Set(key, value string) (string, bool) {
 	dm.mutex.Lock()
 	defer dm.mutex.Unlock()
 
 	// Проверяем, существует ли уже укороченное значение
 	if existingKey, exists := dm.valueToKey[value]; exists {
-		return existingKey
+		return existingKey, false
 	}
 
 	// Сохраняем новое значение и ключ в обе карты
 	dm.valueToKey[value] = key
 	dm.keyToValue[key] = value
 
-	return key
+	return key, true
 }
 
 // Get возвращает значение для данного ключа.
@@ -57,4 +58,12 @@ func Get(key string) (value string) {
 	// Извлекаем значение
 	value = dm.keyToValue[key]
 	return value
+}
+
+func PrintKeyValue() {
+	fmt.Println("Storage: key value >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+	for k, v := range dm.keyToValue {
+		fmt.Printf("%v %v\n", k, v)
+	}
+	fmt.Println("Storage: <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
 }

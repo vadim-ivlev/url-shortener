@@ -58,7 +58,7 @@ var tests = []struct {
 func TestSet(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := Set(tt.args.key, tt.args.value)
+			got, _ := Set(tt.args.key, tt.args.value)
 			assert.Equal(t, tt.want, got)
 			fmt.Printf("Name = %v, Key = %v, Value = %v, Want = %v, Got = %v\n", tt.name, tt.args.key, tt.args.value, tt.want, got)
 		})
@@ -69,7 +69,7 @@ func TestGet(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			got := Set(tt.args.key, tt.args.value)
+			got, _ := Set(tt.args.key, tt.args.value)
 			assert.Equal(t, tt.want, got)
 
 			gotValue := Get(tt.want)

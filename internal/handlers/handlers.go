@@ -3,13 +3,37 @@ package handlers
 import (
 	"encoding/json"
 	"io"
+
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/rs/zerolog/log"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
+	filestorage "github.com/vadim-ivlev/url-shortener/internal/iter9-filestorage"
 	"github.com/vadim-ivlev/url-shortener/internal/shortener"
 	"github.com/vadim-ivlev/url-shortener/internal/storage"
 )
+
+// generateShortURL генерирует короткий URL и сохраняет его в хранилище.
+func generateShortURL(originalURL string) string {
+	// Сгенерировать короткий id и сохранить его
+	shortID := shortener.Shorten(originalURL)
+	savedID, added := storage.Set(shortID, originalURL)
+	// Сгенерировать короткий URL
+	shortURL := config.BaseURL + "/" + savedID
+
+	// Если это новый shortID который был добавлен в хранилище, то есть added == true
+	if added {
+		// сохранить короткий и оригинальный URL в файловое хранилище
+		err := filestorage.Store(config.FileStoragePath, shortURL, originalURL)
+		if err != nil {
+			log.Warn().Err(err).Msg("Cannot save shortened url in the filestorage")
+			// http.Error(w, "Cannot save shortened url in the filestorage", http.StatusInternalServerError)
+			// return
+		}
+	}
+	return shortURL
+}
 
 // ShortenURLHandler обрабатывает POST-запросы для создания короткого URL.
 func ShortenURLHandler(w http.ResponseWriter, r *http.Request) {
@@ -26,10 +50,7 @@ func ShortenURLHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Сгенерировать короткий id и сохранить его
-	shortID := shortener.Shorten(originalURL)
-	savedID := storage.Set(shortID, originalURL)
-	// Сгенерировать короткий URL
-	shortURL := config.BaseURL + "/" + savedID
+	shortURL := generateShortURL(originalURL)
 
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "text/plain")
@@ -97,10 +118,7 @@ func APIShortenHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Сгенерировать короткий id и сохранить его
-	shortID := shortener.Shorten(originalURL)
-	savedID := storage.Set(shortID, originalURL)
-	// Сгенерировать короткий URL
-	shortURL := config.BaseURL + "/" + savedID
+	shortURL := generateShortURL(originalURL)
 
 	type apiShortenResponse struct {
 		Result string `json:"result"`
