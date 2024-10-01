@@ -15,10 +15,10 @@ func main() {
 	logger.InitializeLogger()
 	config.ParseCommandLine()
 	storage.Create()
-	_, err := filestorage.LoadData(config.FileStoragePath)
+	_, err := filestorage.LoadData(config.Params.FileStoragePath)
 	if err != nil {
 		log.Warn().Err(err).Msg("Filestorage not found. Probably this is the first launch.")
 	}
 	storage.PrintKeyValue()
-	server.ServeChi(config.Address)
+	server.ServeChi(config.Params.ServerAddress)
 }

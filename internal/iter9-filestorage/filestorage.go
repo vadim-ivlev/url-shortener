@@ -103,7 +103,7 @@ func LoadData(path string) ([]fileStorageRecord, error) {
 		records = append(records, record)
 
 		// Извлекаем shortID из record.ShortURL
-		shortID := record.ShortURL[len(config.BaseURL)+1:]
+		shortID := record.ShortURL[len(config.Params.BaseURL)+1:]
 		// Добавляем запись в карту хранилища
 		storage.Set(shortID, record.OriginalURL)
 	}

@@ -9,41 +9,41 @@ import (
 	"github.com/caarlos0/env/v11"
 )
 
-type envConfig struct {
+// config - структура для хранения параметров приложения
+type config struct {
 	ServerAddress   string `env:"SERVER_ADDRESS"`
 	BaseURL         string `env:"BASE_URL"`
 	FileStoragePath string `env:"FILE_STORAGE_PATH"`
 }
 
-var Address string
-var BaseURL string
-var FileStoragePath string
+// Params - переменная для хранения параметров приложения
+var Params config = config{}
 
 func ParseCommandLine() {
 	// Читаем параметры командной строки с значениями по умолчанию
-	flag.StringVar(&Address, "a", "localhost:8080", "HTTP server address")
-	flag.StringVar(&BaseURL, "b", "http://localhost:8080", "Base URL")
-	flag.StringVar(&FileStoragePath, "f", "./data/file-storage.txt", "File storage path")
+	flag.StringVar(&Params.ServerAddress, "a", "localhost:8080", "HTTP server address")
+	flag.StringVar(&Params.BaseURL, "b", "http://localhost:8080", "Base URL")
+	flag.StringVar(&Params.FileStoragePath, "f", "./data/file-storage.txt", "File storage path")
 	flag.Parse()
 
 	// Читаем переменные окружения
-	cfg := envConfig{}
-	if err := env.Parse(&cfg); err != nil {
+	envVars := config{}
+	if err := env.Parse(&envVars); err != nil {
 		fmt.Printf("%+v\n", err)
 	}
 
 	// Если переменные окружения заданы, то используем их
-	if cfg.ServerAddress != "" {
-		Address = cfg.ServerAddress
+	if envVars.ServerAddress != "" {
+		Params.ServerAddress = envVars.ServerAddress
 	}
-	if cfg.BaseURL != "" {
-		BaseURL = cfg.BaseURL
+	if envVars.BaseURL != "" {
+		Params.BaseURL = envVars.BaseURL
 	}
-	if cfg.FileStoragePath != "" {
-		FileStoragePath = cfg.FileStoragePath
+	if envVars.FileStoragePath != "" {
+		Params.FileStoragePath = envVars.FileStoragePath
 	}
 
-	log.Info().Msg("Server Address: " + Address)
-	log.Info().Msg("Shortened Base URL: " + BaseURL)
-	log.Info().Msg("File Storage Path: " + FileStoragePath)
+	log.Info().Msg("Server Address: " + Params.ServerAddress)
+	log.Info().Msg("Shortened Base URL: " + Params.BaseURL)
+	log.Info().Msg("File Storage Path: " + Params.FileStoragePath)
 }

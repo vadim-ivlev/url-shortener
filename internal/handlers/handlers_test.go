@@ -55,7 +55,7 @@ func InitTestTable() {
 			want: want{
 				postReturnCode: http.StatusCreated,
 				getReturnCode:  http.StatusTemporaryRedirect,
-				shortURL:       config.BaseURL + "/F870F1E9",
+				shortURL:       config.Params.BaseURL + "/F870F1E9",
 				contentType:    "text/plain",
 			},
 		},
@@ -65,7 +65,7 @@ func InitTestTable() {
 			want: want{
 				postReturnCode: http.StatusCreated,
 				getReturnCode:  http.StatusTemporaryRedirect,
-				shortURL:       config.BaseURL + "/4AED1C05",
+				shortURL:       config.Params.BaseURL + "/4AED1C05",
 				contentType:    "text/plain",
 			},
 		},
@@ -75,7 +75,7 @@ func InitTestTable() {
 			want: want{
 				postReturnCode: http.StatusCreated,
 				getReturnCode:  http.StatusTemporaryRedirect,
-				shortURL:       config.BaseURL + "/F870F1E9",
+				shortURL:       config.Params.BaseURL + "/F870F1E9",
 				contentType:    "text/plain",
 			},
 		},

@@ -20,16 +20,14 @@ func generateShortURL(originalURL string) string {
 	shortID := shortener.Shorten(originalURL)
 	savedID, added := storage.Set(shortID, originalURL)
 	// Сгенерировать короткий URL
-	shortURL := config.BaseURL + "/" + savedID
+	shortURL := config.Params.BaseURL + "/" + savedID
 
 	// Если это новый shortID который был добавлен в хранилище, то есть added == true
 	if added {
 		// сохранить короткий и оригинальный URL в файловое хранилище
-		err := filestorage.Store(config.FileStoragePath, shortURL, originalURL)
+		err := filestorage.Store(config.Params.FileStoragePath, shortURL, originalURL)
 		if err != nil {
 			log.Warn().Err(err).Msg("Cannot save shortened url in the filestorage")
-			// http.Error(w, "Cannot save shortened url in the filestorage", http.StatusInternalServerError)
-			// return
 		}
 	}
 	return shortURL
