@@ -1,63 +1,51 @@
 #!/bin/bash
 
-echo "Looking for dead code ---------------------------"
-# go install github.com/deadcode/deadcode@latest
-deadcode ./...
 
-echo "Test coverage -----------------------------------"
-go test -cover ./...
-# go test -coverprofile=cover.out ./...
-# go tool cover -html=cover.out
-
-echo "Running tests -----------------------------------"
-go test -count=1 ./...
-
-
-echo "Building shortenertest ---------------------------"
+echo ; echo ; echo "Building shortenertest ---------------------------"
 # go build -buildvcs=false -o cmd/shortener/shortener cmd/shortener/main.go
 go build -o cmd/shortener/shortener cmd/shortener/main.go
 
-echo "Running static tests -----------------------------"
+echo ; echo ; echo "Running static tests -----------------------------"
 go vet -vettool=statictest-darwin-arm64 ./...
 
-echo "Running Iteration 1 tests ------------------------"
-shortenertest -test.v -test.run=^TestIteration1$ -binary-path=cmd/shortener/shortener
+echo ; echo ; echo "Code Increment #1 tests ------------------------"
+shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration1$ -binary-path=cmd/shortener/shortener
 
-echo "Running Iteration 2 tests ------------------------"
+echo ; echo ; echo "Code Increment #2 tests ------------------------"
 # shortenertest -test.v -test.run=^TestIteration2$ -binary-path=cmd/shortener/shortener -source-path=./internal
-shortenertest -test.v -test.run=^TestIteration2$ -source-path=.
+shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration2$ -source-path=.
 
-echo "Running Iteration 3 tests ------------------------"
-shortenertest -test.v -test.run=^TestIteration3$ -source-path=.
+echo ; echo ; echo "Code Increment #3 tests ------------------------"
+shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration3$ -source-path=.
 
-echo "Running Iteration 4 tests ------------------------"
+echo ; echo ; echo "Code Increment #4 tests ------------------------"
 # SERVER_PORT=$(random unused-port)
 SERVER_PORT=8082
 echo "SERVER_PORT=$SERVER_PORT"
 shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration4$ -binary-path=cmd/shortener/shortener -server-port=$SERVER_PORT 
 
-echo "Running Iteration 5 tests ------------------------"
+echo ; echo ; echo "Code Increment #5 tests ------------------------"
 SERVER_PORT=8082
 echo "SERVER_PORT=$SERVER_PORT"
 shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration5$ -binary-path=cmd/shortener/shortener -server-port=$SERVER_PORT
 
-echo "Running Iteration 6 tests ------------------------"
+echo ; echo ; echo "Code Increment #6 tests ------------------------"
 shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration6$ -source-path=.
 
-echo "Running Iteration 7 tests ------------------------"
+echo ; echo ; echo "Code Increment #7 tests ------------------------"
 shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration7$ -binary-path=cmd/shortener/shortener -source-path=.
 
-echo "Running Iteration 8 tests ------------------------"
+echo ; echo ; echo "Code Increment #8 tests ------------------------"
 shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration8$ -binary-path=cmd/shortener/shortener
 
-echo "Running Iteration 9 tests ------------------------"
+echo ; echo ; echo "Code Increment #9 tests ------------------------"
 # TEMP_FILE=$(random tempfile)
 # tempfile is not available in macos
 TEMP_FILE=$(mktemp -p /tmp)
 echo "TEMP_FILE=$TEMP_FILE"
 shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration9$ -binary-path=cmd/shortener/shortener -source-path=. -file-storage-path=$TEMP_FILE
 
-echo "Running Iteration 10 tests ------------------------"
+echo ; echo ; echo "Code Increment #10 tests ------------------------"
 shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration10$ \
     -binary-path=cmd/shortener/shortener \
     -source-path=. \
