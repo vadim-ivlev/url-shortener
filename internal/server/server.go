@@ -17,6 +17,7 @@ func ServeChi(address string) {
 	r.Use(compression.GzipMiddleware)
 	r.Post("/", handlers.ShortenURLHandler)
 	r.Get("/{id}", handlers.RedirectHandler)
+	r.Get("/ping", handlers.PingHandler)
 
 	r.Route("/api", func(r chi.Router) {
 		r.Use(contentTypeJSON)

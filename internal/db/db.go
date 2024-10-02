@@ -1,6 +1,7 @@
 package db
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -13,17 +14,18 @@ import (
 // DB - пул соединений с базой данных
 var DB *sqlx.DB = nil
 
-// CreateDBPool - создает пул соединений с базой данных
-func CreateDBPool() (err error) {
+// CreatePool - создает пул соединений с базой данных
+func CreatePool() (err error) {
 	DB, err = sqlx.Connect("postgres", config.Params.DatabaseDSN)
 	return err
 }
 
-// ConnectToDatabase - Ожидает соединения с базой данных повторяя попытки в случае неудачи.
+// Connect - Ожидает соединения с базой данных повторяя попытки в случае неудачи.
 // numAttempts - количество попыток
-func ConnectToDatabase(numAttempts int) {
+func Connect(numAttempts int) (err error) {
+	err = errors.New("no attempts to connect to DB")
 	for i := 1; i <= numAttempts; i++ {
-		err := CreateDBPool()
+		err = CreatePool()
 		if err == nil {
 			log.Info().Msg("Connected to DB")
 			return
@@ -32,4 +34,18 @@ func ConnectToDatabase(numAttempts int) {
 		time.Sleep(time.Second)
 	}
 	log.Error().Msg("Failed to connect to DB")
+	return err
+}
+
+// Disconnect - закрывает соединение с базой данных
+func Disconnect() {
+	if DB != nil {
+		DB.Close()
+	}
+	DB = nil
+}
+
+// IsConnected - проверяет, установлено ли соединение с базой данных
+func IsConnected() bool {
+	return DB != nil && DB.Ping() == nil
 }
