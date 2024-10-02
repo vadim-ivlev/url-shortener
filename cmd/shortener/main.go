@@ -16,5 +16,6 @@ func main() {
 	storage.Create()
 	filestorage.LoadDataAndLog(config.Params.FileStoragePath)
 	db.Connect(1)
+	db.MigrateUp("./migrations")
 	server.ServeChi(config.Params.ServerAddress)
 }
