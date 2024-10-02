@@ -178,8 +178,8 @@ func getID(url string) (id string) {
 	return
 }
 
-// disabled_ added to pass automatic tests
-func disabled_TestPingHandler(t *testing.T) {
+// disabled added to pass automatic tests
+func disabledTestPingHandler(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodGet, "/ping", nil)
 

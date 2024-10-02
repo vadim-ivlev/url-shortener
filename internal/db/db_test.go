@@ -13,8 +13,8 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// disabled_ added to pass automatic tests
-func disabled_TestCreateDBPool(t *testing.T) {
+// disabled added to pass automatic tests
+func disabledTestCreateDBPool(t *testing.T) {
 	tests := []struct {
 		name    string
 		wantErr bool
@@ -33,8 +33,8 @@ func disabled_TestCreateDBPool(t *testing.T) {
 	}
 }
 
-// disabled_ added to pass automatic tests
-func disabled_TestConnectToDatabase(t *testing.T) {
+// disabled added to pass automatic tests
+func disabledTestConnectToDatabase(t *testing.T) {
 	type args struct {
 		numAttempts int
 	}
