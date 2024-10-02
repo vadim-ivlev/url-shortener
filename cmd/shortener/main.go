@@ -15,6 +15,6 @@ func main() {
 	config.PrintParams()
 	storage.Create()
 	filestorage.LoadDataAndLog(config.Params.FileStoragePath)
-	db.Connect(3)
+	db.Connect(1)
 	server.ServeChi(config.Params.ServerAddress)
 }

@@ -28,7 +28,7 @@ func Connect(numAttempts int) (err error) {
 		err = CreatePool()
 		if err == nil {
 			log.Info().Msg("Connected to DB")
-			return
+			return err
 		}
 		log.Warn().Err(err).Msg(fmt.Sprintf("Waiting for db connection. Attempt # %d", i))
 		time.Sleep(time.Second)
