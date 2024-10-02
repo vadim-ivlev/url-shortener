@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
 	"github.com/vadim-ivlev/url-shortener/internal/storage"
 )
@@ -108,4 +109,15 @@ func LoadData(path string) ([]fileStorageRecord, error) {
 		storage.Set(shortID, record.OriginalURL)
 	}
 	return records, nil
+}
+
+// LoadDataAndLog - загружает данные из файлового хранилища и выводит сообщение в лог.
+func LoadDataAndLog(path string) {
+	_, err := LoadData(path)
+	if err != nil {
+		log.Warn().Err(err).Msg("Filestorage not found. Probably this is the first launch.")
+	} else {
+		log.Info().Msg("Filestorage loaded")
+		// PrintKeyValue()
+	}
 }

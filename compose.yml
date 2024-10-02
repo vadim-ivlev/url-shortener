@@ -1,0 +1,21 @@
+version: '3.5'
+
+services:
+
+  # база данных
+  url-shortener-db:
+    image: postgres:10.9-alpine
+    container_name:  url-shortener-db
+    restart: unless-stopped
+    ports:
+      - 5432:5432
+    # volumes:
+    #   - "./dump:/dump"
+    #   - "./migrations:/dumps"
+    #   - "./configs/.pgpass:/root/.pgpass"
+    environment:
+      POSTGRES_USER: pgadmin
+      POSTGRES_PASSWORD: pgpassword
+      POSTGRES_DB: urlshortener 
+      # PGDATA: /var/lib/postgresql/data/pgdata
+

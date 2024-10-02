@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 
@@ -14,6 +15,7 @@ type config struct {
 	ServerAddress   string `env:"SERVER_ADDRESS"`
 	BaseURL         string `env:"BASE_URL"`
 	FileStoragePath string `env:"FILE_STORAGE_PATH"`
+	DatabaseDSN     string `env:"DATABASE_DSN"`
 }
 
 // Params - переменная для хранения параметров приложения
@@ -24,6 +26,9 @@ func ParseCommandLine() {
 	flag.StringVar(&Params.ServerAddress, "a", "localhost:8080", "HTTP server address")
 	flag.StringVar(&Params.BaseURL, "b", "http://localhost:8080", "Base URL")
 	flag.StringVar(&Params.FileStoragePath, "f", "./data/file-storage.txt", "File storage path")
+	flag.StringVar(&Params.DatabaseDSN, "d", "host=localhost port=5432 user=pgadmin password=pgpassword dbname=urlshortener sslmode=disable search_path=public", "Database DSN")
+	// flag.StringVar(&Params.DatabaseDSN, "d", "postgres://pgadmin:pgpassword@localhost:5432/urlshortener?sslmode=disable", "Database DSN")
+
 	flag.Parse()
 
 	// Читаем переменные окружения
@@ -42,8 +47,22 @@ func ParseCommandLine() {
 	if envVars.FileStoragePath != "" {
 		Params.FileStoragePath = envVars.FileStoragePath
 	}
+	if envVars.DatabaseDSN != "" {
+		Params.DatabaseDSN = envVars.DatabaseDSN
+	}
+}
 
-	log.Info().Msg("Server Address: " + Params.ServerAddress)
-	log.Info().Msg("Shortened Base URL: " + Params.BaseURL)
-	log.Info().Msg("File Storage Path: " + Params.FileStoragePath)
+// JSONString - сериализуем структуру в формат JSON
+func JSONString(params interface{}) string {
+	bytes, err := json.MarshalIndent(params, "", "  ")
+	if err != nil {
+		log.Error().Msg(err.Error())
+	}
+	return string(bytes)
+}
+
+// PrintParams - выводит параметры приложения в лог
+func PrintParams() {
+	log.Info().Msg("Параметры приложения:\n" + JSONString(Params))
+	JSONString(Params)
 }
