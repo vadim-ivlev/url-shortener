@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/vadim-ivlev/url-shortener/internal/compression"
 	"github.com/vadim-ivlev/url-shortener/internal/handlers"
-	compression "github.com/vadim-ivlev/url-shortener/internal/iter8-compression"
 	"github.com/vadim-ivlev/url-shortener/internal/logger"
 )
 

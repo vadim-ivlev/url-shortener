@@ -10,7 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog/log"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
-	filestorage "github.com/vadim-ivlev/url-shortener/internal/iter9-filestorage"
+	"github.com/vadim-ivlev/url-shortener/internal/filestorage"
 	"github.com/vadim-ivlev/url-shortener/internal/shortener"
 	"github.com/vadim-ivlev/url-shortener/internal/storage"
 )
