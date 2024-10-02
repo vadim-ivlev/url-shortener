@@ -74,7 +74,6 @@ func TestGet(t *testing.T) {
 
 			gotValue := Get(tt.want)
 			assert.Equal(t, tt.args.value, gotValue)
-			// fmt.Printf("Name = %v, PassedKey = %v, Wanted Value = %v, GotValue = %v\n", tt.name, tt.want, tt.args.value, gotValue)
 		})
 	}
 }

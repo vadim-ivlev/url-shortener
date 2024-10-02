@@ -118,6 +118,5 @@ func LoadDataAndLog(path string) {
 		log.Warn().Err(err).Msg("Filestorage not found. Probably this is the first launch.")
 	} else {
 		log.Info().Msg("Filestorage loaded")
-		// PrintKeyValue()
 	}
 }

@@ -158,8 +158,7 @@ func RedirectHandler(w http.ResponseWriter, r *http.Request) {
 // PingHandler - при запросе проверяет соединение с базой данных.
 // При успешной проверке хендлер должен вернуть HTTP-статус `200 OK`, при неуспешной — `500 Internal Server Error`.
 func PingHandler(w http.ResponseWriter, r *http.Request) {
-	DBConnected := db.DB != nil && db.DB.Ping() == nil
-	if DBConnected {
+	if db.IsConnected() {
 		w.WriteHeader(http.StatusOK)
 	} else {
 		w.WriteHeader(http.StatusInternalServerError)

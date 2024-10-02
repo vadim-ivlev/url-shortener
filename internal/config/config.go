@@ -26,9 +26,7 @@ func ParseCommandLine() {
 	flag.StringVar(&Params.ServerAddress, "a", "localhost:8080", "HTTP server address")
 	flag.StringVar(&Params.BaseURL, "b", "http://localhost:8080", "Base URL")
 	flag.StringVar(&Params.FileStoragePath, "f", "./data/file-storage.txt", "File storage path")
-	flag.StringVar(&Params.DatabaseDSN, "d", "host=localhost port=5432 user=pgadmin password=pgpassword dbname=urlshortener sslmode=disable search_path=public", "Database DSN")
-	// flag.StringVar(&Params.DatabaseDSN, "d", "postgres://pgadmin:pgpassword@localhost:5432/urlshortener?sslmode=disable", "Database DSN")
-
+	flag.StringVar(&Params.DatabaseDSN, "d", "postgres://postgres:postgres@localhost:5432/praktikum?sslmode=disable", "Database DSN")
 	flag.Parse()
 
 	// Читаем переменные окружения

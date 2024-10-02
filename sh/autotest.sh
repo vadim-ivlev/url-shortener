@@ -56,3 +56,10 @@ echo "Running Iteration 9 tests ------------------------"
 TEMP_FILE=$(mktemp -p /tmp)
 echo "TEMP_FILE=$TEMP_FILE"
 shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration9$ -binary-path=cmd/shortener/shortener -source-path=. -file-storage-path=$TEMP_FILE
+
+echo "Running Iteration 10 tests ------------------------"
+shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration10$ \
+    -binary-path=cmd/shortener/shortener \
+    -source-path=. \
+    -database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable'
+
