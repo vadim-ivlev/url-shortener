@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Emulate CI environment 
+export CI="home"
 
 echo ; echo ; echo "Building shortenertest ---------------------------"
 # go build -buildvcs=false -o cmd/shortener/shortener cmd/shortener/main.go

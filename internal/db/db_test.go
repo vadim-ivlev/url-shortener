@@ -5,16 +5,26 @@ import (
 	"testing"
 
 	_ "github.com/lib/pq"
+	"github.com/rs/zerolog/log"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
 )
+
+// skipCI skips tests in CI environment
+func skipCI(t *testing.T) {
+	if os.Getenv("CI") != "" {
+		log.Info().Msg("Skipping testing in CI environment")
+		t.Skip("Skipping testing in CI environment")
+	}
+}
 
 func TestMain(m *testing.M) {
 	config.ParseCommandLine()
 	os.Exit(m.Run())
 }
 
-// disabled added to pass automatic tests
-func disabledTestCreateDBPool(t *testing.T) {
+func TestCreateDBPool(t *testing.T) {
+	skipCI(t)
+
 	tests := []struct {
 		name    string
 		wantErr bool
@@ -33,8 +43,9 @@ func disabledTestCreateDBPool(t *testing.T) {
 	}
 }
 
-// disabled added to pass automatic tests
-func disabledTestConnectToDatabase(t *testing.T) {
+func TestConnectToDatabase(t *testing.T) {
+	skipCI(t)
+
 	type args struct {
 		numAttempts int
 	}
