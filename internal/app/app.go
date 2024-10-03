@@ -1,4 +1,4 @@
-// Бизнес логика приложения.
+// Description: Бизнес логика приложения.
 // Определенные здесь фунции связывают в себе вызовы функций различных пакетов.
 // Цель  -  понизить связанность (coupling) между пакетами.
 
@@ -9,7 +9,6 @@ import (
 	"github.com/vadim-ivlev/url-shortener/internal/config"
 	"github.com/vadim-ivlev/url-shortener/internal/db"
 	"github.com/vadim-ivlev/url-shortener/internal/filestorage"
-	"github.com/vadim-ivlev/url-shortener/internal/storage"
 )
 
 // Получить короткий URL из shortID
@@ -29,23 +28,33 @@ func ShortID(shortURL string) string {
 func LoadDataToStorage() {
 	switch {
 	case config.Params.DatabaseDSN != "":
-		loadDataFromDB()
+		db.LoadData()
 	case config.Params.FileStoragePath != "":
-		filestorage.LoadDataAndLog(config.Params.FileStoragePath)
+		filestorage.LoadData()
 	default:
 		log.Info().Msg("LoadData(). No persistent data store specified")
 	}
 }
 
-// loadDataFromDB - загружает данные из базы данных в storage.
-func loadDataFromDB() {
-	if !db.IsConnected() {
-		log.Error().Msg("loadDataFromDB(). No connection to DB")
-		return
+// AddToStore сохраняет короткий и оригинальный URL в базу данных или в файловое хранилище.
+// Если указана DatabaseDSN в конфигурации, то сохранять данные в базу данных.
+// В противном случае, если указан FileStoragePath в конфигурации, то сохранять данные в файловое хранилище.
+// Если ни один из параметров не указан, то ничего не сохранять.
+func AddToStore(shortID, originalURL string) {
+	switch {
+	case config.Params.DatabaseDSN != "":
+		// сохранить shortID и оригинальный URL в базу данных
+		err := db.Store(shortID, originalURL)
+		if err != nil {
+			log.Warn().Err(err).Msg("Cannot save shortID in the database")
+		}
+	case config.Params.FileStoragePath != "":
+		// сохранить shortID и оригинальный URL в файловое хранилище
+		err := filestorage.Store(ShortURL(shortID), originalURL)
+		if err != nil {
+			log.Warn().Err(err).Msg("Cannot save shortened url in the filestorage")
+		}
+	default:
+		log.Info().Msg("AddToStore(). No persistent data store specified")
 	}
-	data, err := db.GetData()
-	if err != nil {
-		log.Warn().Err(err).Msg("loadDataFromDB(). Cannot get data from DB")
-	}
-	storage.LoadData(data)
 }

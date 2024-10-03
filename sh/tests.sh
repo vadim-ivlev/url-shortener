@@ -1,9 +1,11 @@
 #!/bin/bash
 
+echo "Удаляем файл хранилища *******************************"
+rm -rf ./data
 
 echo "Запускаем базу данных, для эмуляции поведения GitHub CI ***********************"
 docker compose up -d
-sleep 5
+sleep 2
 
 
 echo "Looking for dead code ---------------------------"

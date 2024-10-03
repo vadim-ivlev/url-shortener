@@ -38,8 +38,8 @@ func Create() {
 // Сначала проверяется, существует ли значение уже в карте valueToKey. Если да, то возвращается существующий ключ.
 // Если значение не существует, оно сохраняется с новым ключом и возвращается новый ключ.
 // Новые отображения добавляются в обе карты.
-// Возвращает ключ и флаг, указывающий, было ли значение добавлено в карту.
-func Set(key, value string) (string, bool) {
+// Возвращает ключ и флаг, указывающий, было ли новое значение добавлено в карту.
+func Set(key, value string) (savedKey string, newKeyAdded bool) {
 	dm.mutex.Lock()
 	defer dm.mutex.Unlock()
 
@@ -74,16 +74,15 @@ func Get(key string) (value string) {
 }
 
 // PrintContent выводит содержимое хранилища в консоль.
+// limit - количество элементов, которые будут выведены.
 func PrintContent(limit int) {
-	fmt.Println("Storage: # key value >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-	n := 1
+	log.Info().Msg(fmt.Sprintf("RAM Storage contains %d records", len(dm.keyToValue)))
+	n := 0
 	for k, v := range dm.keyToValue {
-		fmt.Printf("%4v %v %v\n", n, k, v)
 		n++
 		if n > limit {
-			fmt.Println("...")
 			break
 		}
+		fmt.Printf("%4v %v %v\n", n, k, v)
 	}
-	fmt.Println("Storage: <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
 }

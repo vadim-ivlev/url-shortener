@@ -3,9 +3,13 @@
 # Emulate CI environment 
 export CI="home"
 
+echo "Удаляем файл хранилища *******************************"
+rm -rf ./data
+
+
 echo "Останавливаем базу данных, для эмуляции поведения GitHub CI ***********************"
 docker compose down
-sleep 5
+
 
 
 echo ; echo ; echo "Building shortenertest ---------------------------"
@@ -55,7 +59,7 @@ shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration9$ -binary-path=c
 
 echo "Запускаем базу данных, для эмуляции поведения GitHub CI ***********************"
 docker compose up -d
-sleep 5
+sleep 2
 
 
 echo ; echo ; echo "Code Increment #10 tests ------------------------"
