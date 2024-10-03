@@ -116,11 +116,10 @@ func APIShortenHandler(w http.ResponseWriter, r *http.Request) {
 	// Сгенерировать короткий id и сохранить его
 	shortURL := generateShortURL(originalURL)
 
-	type apiShortenResponse struct {
+	resp := struct {
 		Result string `json:"result"`
-	}
+	}{Result: shortURL}
 
-	resp := apiShortenResponse{Result: shortURL}
 	respBody, err := json.Marshal(resp)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
