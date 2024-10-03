@@ -24,7 +24,7 @@ func ServeChi() {
 	r.Route("/api", func(r chi.Router) {
 		r.Use(contentTypeJSON)
 		r.Post("/shorten", handlers.APIShortenHandler)
-		r.Post("/api/shorten/batch", handlers.APIShortenBatchHandler)
+		r.Post("/shorten/batch", handlers.APIShortenBatchHandler)
 	})
 
 	address := config.Params.ServerAddress
