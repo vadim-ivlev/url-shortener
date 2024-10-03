@@ -9,7 +9,32 @@ import (
 	"github.com/vadim-ivlev/url-shortener/internal/config"
 	"github.com/vadim-ivlev/url-shortener/internal/db"
 	"github.com/vadim-ivlev/url-shortener/internal/filestorage"
+	"github.com/vadim-ivlev/url-shortener/internal/logger"
+	"github.com/vadim-ivlev/url-shortener/internal/storage"
 )
+
+// InitApp инициализирует приложение.
+func InitApp() {
+	// Инициализировать логгер
+	logger.InitializeLogger()
+	// Разобрать параметры командной строки
+	config.ParseCommandLine()
+	// Вывести параметры конфигурации в лог
+	config.PrintParams()
+
+	// Создать хранилище в памяти
+	storage.Create()
+
+	// Подключиться к базе данных
+	db.Connect(1)
+	// Выполнить миграции базы данных
+	db.MigrateUp("./migrations")
+
+	// Загрузить данные из базы данных или из файлового хранилища в storage
+	LoadDataToStorage()
+	// Печать содержимого хранилища в лог
+	storage.PrintContent(0)
+}
 
 // Получить короткий URL из shortID
 func ShortURL(shortID string) string {

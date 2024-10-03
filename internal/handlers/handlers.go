@@ -192,4 +192,72 @@ APIShortenBatchHandler - принимает в теле запроса множ�
 - необходимо избегать формирования условий для возникновения состояния гонки (race condition).
 */
 func APIShortenBatchHandler(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"error":"` + strings.ReplaceAll(err.Error(), `"`, ` `) + `"}`))
+		return
+	}
+
+	// Массив для хранения данных запроса
+	var req []struct {
+		CorrelationID string `json:"correlation_id"`
+		OriginalURL   string `json:"original_url"`
+	}
+
+	// Распарсить тело запроса
+	err = json.Unmarshal(body, &req)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"error": "Unmarshal error"})
+		return
+	}
+
+	// Если пустой батч, то вернуть ошибку
+	if len(req) == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"error":"Empty batch"}`))
+		return
+	}
+
+	// Массив для хранения данных ответа
+	resp := make([]struct {
+		CorrelationID string `json:"correlation_id"`
+		ShortURL      string `json:"short_url"`
+	}, 0, len(req))
+
+	// Обработать каждый элемент массива запроса
+	for _, r := range req {
+		originalURL := r.OriginalURL
+		if originalURL == "" {
+			resp = append(resp, struct {
+				CorrelationID string `json:"correlation_id"`
+				ShortURL      string `json:"short_url"`
+			}{CorrelationID: r.CorrelationID, ShortURL: ""})
+			continue
+		}
+
+		// Сгенерировать короткий id и сохранить его
+		shortURL := generateShortURL(originalURL)
+
+		resp = append(resp, struct {
+			CorrelationID string `json:"correlation_id"`
+			ShortURL      string `json:"short_url"`
+		}{CorrelationID: r.CorrelationID, ShortURL: shortURL})
+	}
+
+	respBody, err := json.Marshal(resp)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"error":"Marshal error"}`))
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(respBody)
 }
