@@ -6,6 +6,7 @@
 package db
 
 import (
+	"errors"
 	"io/fs"
 	"path"
 
@@ -23,15 +24,20 @@ func MigrateUp(dirname string) error {
 		log.Error().Err(err).Msg("MigrateUp error in directory")
 		return err
 	}
-	return executeSqlFiles(files, dirname, ".up.sql")
+	return executeSQLFiles(files, dirname, ".up.sql")
 }
 
-// executeSqlFiles выполняем SQL команды в файлах с расширением filenameSuffix в директории dirname
-func executeSqlFiles(files []fs.DirEntry, dirname, filenameSuffix string) error {
+// executeSQLFiles выполняем SQL команды в файлах с расширением filenameSuffix в директории dirname
+func executeSQLFiles(files []fs.DirEntry, dirname, filenameSuffix string) error {
+
 	for _, file := range files {
 		fileName := file.Name()
 		if strings.HasSuffix(fileName, filenameSuffix) {
 			log.Info().Str("filename", fileName).Msg("Executing")
+			if !IsConnected() {
+				log.Error().Msg("executeSQLFiles(). No connection to DB")
+				return errors.New("executeSQLFiles(). No connection to DB")
+			}
 			_, err := DB.Exec(ReadTextFile(path.Join(dirname, fileName)))
 			if err != nil {
 				log.Error().Err(err).Msg("Query Execution error")

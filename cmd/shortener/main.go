@@ -19,7 +19,7 @@ func main() {
 	db.MigrateUp("./migrations")
 
 	app.LoadDataToStorage()
-	storage.PrintContent()
+	storage.PrintContent(3)
 
 	server.ServeChi()
 }

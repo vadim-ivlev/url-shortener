@@ -73,12 +73,17 @@ func Get(key string) (value string) {
 	return value
 }
 
-func PrintContent() {
+// PrintContent выводит содержимое хранилища в консоль.
+func PrintContent(limit int) {
 	fmt.Println("Storage: # key value >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 	n := 1
 	for k, v := range dm.keyToValue {
 		fmt.Printf("%4v %v %v\n", n, k, v)
 		n++
+		if n > limit {
+			fmt.Println("...")
+			break
+		}
 	}
 	fmt.Println("Storage: <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
 }

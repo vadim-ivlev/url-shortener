@@ -56,6 +56,9 @@ func IsConnected() bool {
 // - originalURL - оригинальный URL.
 // Возвращает ошибку, если запись не удалась.
 func Store(shortID, originalURL string) error {
+	if !IsConnected() {
+		return errors.New("Store. No connection to DB")
+	}
 	_, err := DB.Exec("INSERT INTO urls (short_id, original_url) VALUES ($1, $2)", shortID, originalURL)
 	return err
 }
@@ -63,9 +66,18 @@ func Store(shortID, originalURL string) error {
 // GetData - возвращает данные из базы данных в виде map[string]string,
 // где ключ - short_id, значение - original_url.
 func GetData() (data map[string]string, err error) {
+	if !IsConnected() {
+		return nil, errors.New("GetData. No connection to DB")
+	}
+
 	rows, err := DB.Queryx("SELECT short_id, original_url FROM urls")
 	if err != nil {
 		return nil, err
+	}
+	defer rows.Close()
+
+	if rows.Err() != nil {
+		return nil, rows.Err()
 	}
 
 	data = make(map[string]string)

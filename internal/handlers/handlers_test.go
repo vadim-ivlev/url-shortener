@@ -116,7 +116,7 @@ func TestShortenURLHandler(t *testing.T) {
 
 		})
 	}
-	storage.PrintContent()
+	storage.PrintContent(3)
 }
 
 func TestAPIShortenHandler(t *testing.T) {
@@ -135,7 +135,7 @@ func TestAPIShortenHandler(t *testing.T) {
 			fmt.Printf("Content-Type: %v\n", rec.Header().Get("Content-Type"))
 		})
 	}
-	storage.PrintContent()
+	storage.PrintContent(3)
 }
 
 func TestRedirectHandler(t *testing.T) {
