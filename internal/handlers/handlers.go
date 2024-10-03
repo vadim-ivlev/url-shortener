@@ -50,8 +50,38 @@ func ShortenURLHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(shortURL))
 }
 
+// RedirectHandler обрабатывает GET-запросы для перенаправления на оригинальный URL.
+func RedirectHandler(w http.ResponseWriter, r *http.Request) {
+
+	// если id пустой, то вернуть ошибку
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	// Получить оригинальный URL по id и перенаправить
+	originalURL := storage.Get(id)
+	if originalURL == "" {
+		http.Error(w, "URL not found", http.StatusBadRequest)
+		return
+	}
+
+	http.Redirect(w, r, originalURL, http.StatusTemporaryRedirect)
+}
+
+// PingHandler - при запросе проверяет соединение с базой данных.
+// При успешной проверке хендлер должен вернуть HTTP-статус `200 OK`, при неуспешной — `500 Internal Server Error`.
+func PingHandler(w http.ResponseWriter, r *http.Request) {
+	if db.IsConnected() {
+		w.WriteHeader(http.StatusOK)
+	} else {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+}
+
 /*
-APIShortenHandler обрабатывает POST-запросы для создания короткого URL.
+APIShortenHandler - обрабатывает POST-запросы для создания короткого URL.
 Обслуживает эндпоинт POST /api/shorten,
 принимает в теле запроса JSON-объект `{"url":"<some_url>"}`
 и возвращает в ответ объект `{"result":"<short_url>"}`.
@@ -74,13 +104,8 @@ APIShortenHandler обрабатывает POST-запросы для созда
 	{
 	"result": "http://localhost:8080/EwHXdJfB"
 	}
-
-При реализации задействуйте пакеты:
-
-	encoding/json
 */
 func APIShortenHandler(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -128,32 +153,43 @@ func APIShortenHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(respBody)
 }
 
-// RedirectHandler обрабатывает GET-запросы для перенаправления на оригинальный URL.
-func RedirectHandler(w http.ResponseWriter, r *http.Request) {
+/*
+APIShortenBatchHandler - принимает в теле запроса множество URL для сокращения в формате:
+```json
+[
 
-	// если id пустой, то вернуть ошибку
-	id := chi.URLParam(r, "id")
-	if id == "" {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
-		return
-	}
+	{
+		"correlation_id": "<строковый идентификатор>",
+		"original_url": "<URL для сокращения>"
+	},
+	...
 
-	// Получить оригинальный URL по id и перенаправить
-	originalURL := storage.Get(id)
-	if originalURL == "" {
-		http.Error(w, "URL not found", http.StatusBadRequest)
-		return
-	}
+]
+```
 
-	http.Redirect(w, r, originalURL, http.StatusTemporaryRedirect)
-}
+В качестве ответа хендлер должен возвращать данные в формате:
 
-// PingHandler - при запросе проверяет соединение с базой данных.
-// При успешной проверке хендлер должен вернуть HTTP-статус `200 OK`, при неуспешной — `500 Internal Server Error`.
-func PingHandler(w http.ResponseWriter, r *http.Request) {
-	if db.IsConnected() {
-		w.WriteHeader(http.StatusOK)
-	} else {
-		w.WriteHeader(http.StatusInternalServerError)
-	}
+```json
+[
+
+	{
+		"correlation_id": "<строковый идентификатор из объекта запроса>",
+		"short_url": "<результирующий сокращённый URL>"
+	},
+	...
+
+]
+```
+
+Все записи о коротких URL сохраняйте в базе данных. Не забудьте добавить реализацию для сохранения в файл и в память.
+
+Стоит помнить, что:
+
+- нужно соблюдать обратную совместимость;
+- отправлять пустые батчи не нужно;
+- вы умеете сжимать контент по алгоритму gzip;
+- изменение в базе можно выполнять в рамках одной транзакции или одного запроса;
+- необходимо избегать формирования условий для возникновения состояния гонки (race condition).
+*/
+func APIShortenBatchHandler(w http.ResponseWriter, r *http.Request) {
 }
