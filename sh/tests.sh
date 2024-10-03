@@ -1,5 +1,11 @@
 #!/bin/bash
 
+
+echo "Запускаем базу данных, для эмуляции поведения GitHub CI ***********************"
+docker compose up -d
+sleep 5
+
+
 echo "Looking for dead code ---------------------------"
 # go install github.com/deadcode/deadcode@latest
 deadcode ./...

@@ -3,6 +3,11 @@
 # Emulate CI environment 
 export CI="home"
 
+echo "Останавливаем базу данных, для эмуляции поведения GitHub CI ***********************"
+docker compose down
+sleep 5
+
+
 echo ; echo ; echo "Building shortenertest ---------------------------"
 # go build -buildvcs=false -o cmd/shortener/shortener cmd/shortener/main.go
 go build -o cmd/shortener/shortener cmd/shortener/main.go
@@ -46,6 +51,12 @@ echo ; echo ; echo "Code Increment #9 tests ------------------------"
 TEMP_FILE=$(mktemp -p /tmp)
 echo "TEMP_FILE=$TEMP_FILE"
 shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration9$ -binary-path=cmd/shortener/shortener -source-path=. -file-storage-path=$TEMP_FILE
+
+
+echo "Запускаем базу данных, для эмуляции поведения GitHub CI ***********************"
+docker compose up -d
+sleep 5
+
 
 echo ; echo ; echo "Code Increment #10 tests ------------------------"
 shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration10$ \
