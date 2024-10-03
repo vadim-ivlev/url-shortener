@@ -244,90 +244,154 @@ APIShortenBatchHandler принимает в теле запроса множе�
 - изменение в базе можно выполнять в рамках одной транзакции или одного запроса;
 - необходимо избегать формирования условий для возникновения состояния гонки (race condition).
 */
-func aTestAPIShortenBatchHandler(t *testing.T) {
+func TestAPIShortenBatchHandler(t *testing.T) {
 	skipCI(t)
 
-	emptyBodyString := ``
-	noElementsBodyString := ` [] `
-	normalBodyString := `
-		[
-			{
-				"correlation_id": "0",
-				"original_url": ""
-			},
-			{
-				"correlation_id": "1",
-				"original_url": "https://www.google.com"
-			},
-			{
-				"correlation_id": "2",
-				"original_url": "https://www.youtube.com"
-			}
-		]	
-	`
-
-	type args struct {
-		bodyString string
+	// Структура записи входных данных
+	type inpRec struct {
+		CorrelationID string `json:"correlation_id"`
+		OriginalURL   string `json:"original_url"`
 	}
+	// Структура записи выходных данных
+	type outRec struct {
+		CorrelationID string `json:"correlation_id"`
+		ShortURL      string `json:"short_url"`
+	}
+
+	// Типы для массивов входных и выходных данных
+	type inpArray []inpRec
+	type outArray []outRec
+
+	// Тестовые входные данные
+	var emptyInput inpArray = nil
+	var noElementsInput inpArray = []inpRec{}
+	var normalInput inpArray = []inpRec{
+		{
+			CorrelationID: "0",
+			OriginalURL:   "",
+		},
+		{
+			CorrelationID: "1",
+			OriginalURL:   "https://www.google.com",
+		},
+		{
+			CorrelationID: "2",
+			OriginalURL:   "https://www.youtube.com",
+		},
+	}
+
+	// Типы тестовых аргументов и ожидаемых результатов
+	type args struct {
+		inputRecords inpArray
+	}
+
+	type want struct {
+		status      int
+		contentType string
+		numRecords  int
+	}
+
+	// Тестовые случаи
 	tests := []struct {
 		name string
 		args args
+		want want
 	}{
 		{
 			name: "Empty",
 			args: args{
-				bodyString: emptyBodyString,
+				inputRecords: emptyInput,
+			},
+			want: want{
+				status:      http.StatusBadRequest,
+				contentType: "application/json",
+				numRecords:  0,
 			},
 		},
 		{
 			name: "NoElements",
 			args: args{
-				bodyString: noElementsBodyString,
+				inputRecords: noElementsInput,
+			},
+			want: want{
+				status:      http.StatusBadRequest,
+				contentType: "application/json",
+				numRecords:  0,
 			},
 		},
 		{
 			name: "Normal",
 			args: args{
-				bodyString: normalBodyString,
+				inputRecords: normalInput,
+			},
+			want: want{
+				status:      http.StatusCreated,
+				contentType: "application/json",
+				numRecords:  3,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPost, "/api/shorten/batch", strings.NewReader(tt.args.bodyString))
+			req := httptest.NewRequest(http.MethodPost, "/api/shorten/batch", strings.NewReader(PrettyString(tt.args.inputRecords)))
 			rec := httptest.NewRecorder()
 			APIShortenBatchHandler(rec, req)
 
 			// Проверка статуса ответа
 			status := rec.Code
 			log.Info().Msgf("Status: %v", status)
-			assert.Equal(t, http.StatusOK, status)
+			assert.Equal(t, tt.want.status, status)
 
 			// Проверка типа контента
 			contentType := rec.Header().Get("Content-Type")
 			log.Info().Msgf("Content-Type: %v", contentType)
-			assert.Equal(t, "application/json", contentType)
+			assert.Equal(t, tt.want.contentType, contentType)
 
-			// Проверка тела ответа
+			// Печать тела ответа
 			log.Info().Msgf("Body: %v", rec.Body.String())
 
-			// Распарсить тело ответа как в массив структур
-			resp := []struct {
-				CorrelationID string `json:"correlation_id"`
-				ShortURL      string `json:"short_url"`
-			}{}
-			err := json.Unmarshal([]byte(rec.Body.String()), &resp)
+			// Распарсить тело ответа в массив структур
+			outputRecords := outArray{}
+			err := json.Unmarshal(rec.Body.Bytes(), &outputRecords)
 			if err != nil {
-				t.Errorf("Error: %v", err)
+				log.Error().Err(err).Msg("Error")
 			}
-			log.Info().Msgf("Response: %+v", resp)
+
+			// Печать массива структур запроса
+			log.Info().Msgf("Request: %v", PrettyString(tt.args.inputRecords))
+			// Печать массива структур ответа
+			log.Info().Msgf("Response: %v", PrettyString(outputRecords))
 
 			// Проверка количества элементов в ответе
-			assert.Equal(t, 3, len(resp))
+			assert.Equal(t, tt.want.numRecords, len(outputRecords), "Number of records in response")
+
 			// Проверка корреляционных идентификаторов
-			assert.Equal(t, "0", resp[0].CorrelationID)
-			assert.Equal(t, "1", resp[1].CorrelationID)
-			assert.Equal(t, "2", resp[2].CorrelationID)
+			for i, inputRecord := range tt.args.inputRecords {
+				assert.Equal(t, inputRecord.CorrelationID, outputRecords[i].CorrelationID)
+			}
+
+			// Проверка наличиея записей в БД
+			dbData, err := db.GetData()
+			if err != nil {
+				log.Error().Err(err).Msg("Error")
+				return
+			}
+			log.Info().Msgf("DB data: %v", PrettyString(dbData))
+			for _, responseRecord := range outputRecords {
+				shortID := app.ShortID(responseRecord.ShortURL)
+				// пустые shortID в базе данных не проверяем
+				if shortID == "" {
+					continue
+				}
+				originalURL, ok := dbData[shortID]
+				assert.True(t, ok)
+				log.Info().Msgf("DB record. ShortID: %v OriginalURL: %v", shortID, originalURL)
+			}
 		})
 	}
+}
+
+func PrettyString(v interface{}) string {
+	b, _ := json.MarshalIndent(v, "", "  ")
+	return string(b)
 }

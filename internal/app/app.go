@@ -5,6 +5,8 @@
 package app
 
 import (
+	"strings"
+
 	"github.com/rs/zerolog/log"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
 	"github.com/vadim-ivlev/url-shortener/internal/db"
@@ -43,7 +45,7 @@ func ShortURL(shortID string) string {
 
 // Получить shortID из shortURL
 func ShortID(shortURL string) string {
-	return shortURL[len(config.Params.BaseURL)+1:]
+	return strings.TrimPrefix(shortURL, config.Params.BaseURL+"/")
 }
 
 // LoadDataToStorage - загружает данные из базы данных и/или из файлового хранилища в storage.

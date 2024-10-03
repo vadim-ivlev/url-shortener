@@ -211,7 +211,8 @@ func APIShortenBatchHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"error": "Unmarshal error"})
+		errorText := strings.ReplaceAll(err.Error(), `"`, ` `)
+		json.NewEncoder(w).Encode(map[string]string{"error": errorText})
 		return
 	}
 
