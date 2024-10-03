@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
 	"github.com/vadim-ivlev/url-shortener/internal/db"
-	"github.com/vadim-ivlev/url-shortener/internal/filestorage"
 	"github.com/vadim-ivlev/url-shortener/internal/logger"
 	"github.com/vadim-ivlev/url-shortener/internal/storage"
 )
@@ -27,10 +26,15 @@ func skipCI(t *testing.T) {
 }
 
 func TestMain(m *testing.M) {
+	os.Chdir("../../")
+
 	logger.InitializeLogger()
 	config.ParseCommandLine()
+	config.PrintParams()
 	storage.Create()
-	filestorage.LoadDataAndLog(config.Params.FileStoragePath)
+	// filestorage.LoadDataAndLog(config.Params.FileStoragePath)
+	db.Connect(1)
+	db.MigrateUp("./migrations")
 
 	InitTestTable()
 	os.Exit(m.Run())
@@ -97,6 +101,7 @@ func InitTestTable() {
 }
 
 func TestShortenURLHandler(t *testing.T) {
+	skipCI(t)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(tt.url))
@@ -115,6 +120,7 @@ func TestShortenURLHandler(t *testing.T) {
 }
 
 func TestAPIShortenHandler(t *testing.T) {
+	skipCI(t)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, "/api/shorten", strings.NewReader(`{"url":"`+tt.url+`"}`))
@@ -133,7 +139,7 @@ func TestAPIShortenHandler(t *testing.T) {
 }
 
 func TestRedirectHandler(t *testing.T) {
-
+	skipCI(t)
 	// Добавим тесты для проверки перенаправления
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

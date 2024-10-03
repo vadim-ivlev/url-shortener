@@ -25,7 +25,7 @@ func TestMigrateUp(t *testing.T) {
 	}{
 		{
 			name:    "TestMigrateUp",
-			args:    args{dirname: "../../migrations"},
+			args:    args{dirname: "./migrations"},
 			wantErr: false,
 		},
 		{

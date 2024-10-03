@@ -18,6 +18,7 @@ func skipCI(t *testing.T) {
 }
 
 func TestMain(m *testing.M) {
+	os.Chdir("../../")
 	config.ParseCommandLine()
 	os.Exit(m.Run())
 }

@@ -49,3 +49,13 @@ func Disconnect() {
 func IsConnected() bool {
 	return DB != nil && DB.Ping() == nil
 }
+
+// Store - сохраняет данные в базу данных.
+// Параметры:
+// - shortID - укороченный ID.
+// - originalURL - оригинальный URL.
+// Возвращает ошибку, если запись не удалась.
+func Store(shortID, originalURL string) error {
+	_, err := DB.Exec("INSERT INTO urls (short_id, original_url) VALUES ($1, $2)", shortID, originalURL)
+	return err
+}

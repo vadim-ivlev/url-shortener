@@ -16,6 +16,20 @@ import (
 	"github.com/vadim-ivlev/url-shortener/internal/storage"
 )
 
+// AddToStore сохраняет короткий и оригинальный URL в базу данных и/или в файловое хранилище.
+func AddToStore(shortID, shortURL, originalURL string) {
+	// сохранить короткий и оригинальный URL в файловое хранилище
+	err := filestorage.Store(config.Params.FileStoragePath, shortURL, originalURL)
+	if err != nil {
+		log.Warn().Err(err).Msg("Cannot save shortened url in the filestorage")
+	}
+	// сохранить короткий и оригинальный URL в базу данных
+	err = db.Store(shortID, originalURL)
+	if err != nil {
+		log.Warn().Err(err).Msg("Cannot save shortID in the database")
+	}
+}
+
 // generateShortURL генерирует короткий URL и сохраняет его в хранилище.
 func generateShortURL(originalURL string) string {
 	// Сгенерировать короткий id и сохранить его
@@ -24,13 +38,10 @@ func generateShortURL(originalURL string) string {
 	// Сгенерировать короткий URL
 	shortURL := config.Params.BaseURL + "/" + savedID
 
-	// Если это новый shortID который был добавлен в хранилище, то есть added == true
+	// Если это новый shortID который был добавлен в хранилище в RAM, то есть added == true,
+	// то сохранить короткий и оригинальный URL в базу данных и/или в файловое хранилище
 	if added {
-		// сохранить короткий и оригинальный URL в файловое хранилище
-		err := filestorage.Store(config.Params.FileStoragePath, shortURL, originalURL)
-		if err != nil {
-			log.Warn().Err(err).Msg("Cannot save shortened url in the filestorage")
-		}
+		AddToStore(savedID, shortURL, originalURL)
 	}
 	return shortURL
 }
