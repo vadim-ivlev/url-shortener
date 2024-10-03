@@ -4,13 +4,15 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/rs/zerolog/log"
 	"github.com/vadim-ivlev/url-shortener/internal/compression"
+	"github.com/vadim-ivlev/url-shortener/internal/config"
 	"github.com/vadim-ivlev/url-shortener/internal/handlers"
 	"github.com/vadim-ivlev/url-shortener/internal/logger"
 )
 
-// Using Chi router
-func ServeChi(address string) {
+// ServeChi запускает сервер на порту, указанном в конфигурации.
+func ServeChi() {
 	r := chi.NewRouter()
 
 	r.Use(logger.RequestLogger)
@@ -24,6 +26,8 @@ func ServeChi(address string) {
 		r.Post("/shorten", handlers.APIShortenHandler)
 	})
 
+	address := config.Params.ServerAddress
+	log.Info().Str("address", address).Msg("Starting the server at the ...")
 	err := http.ListenAndServe(address, r)
 	if err != nil {
 		panic(err)

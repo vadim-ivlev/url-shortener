@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog/log"
+	"github.com/vadim-ivlev/url-shortener/internal/app"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
 	"github.com/vadim-ivlev/url-shortener/internal/db"
 	"github.com/vadim-ivlev/url-shortener/internal/filestorage"
@@ -17,33 +18,41 @@ import (
 )
 
 // AddToStore сохраняет короткий и оригинальный URL в базу данных и/или в файловое хранилище.
-func AddToStore(shortID, shortURL, originalURL string) {
-	// сохранить короткий и оригинальный URL в файловое хранилище
-	err := filestorage.Store(config.Params.FileStoragePath, shortURL, originalURL)
-	if err != nil {
-		log.Warn().Err(err).Msg("Cannot save shortened url in the filestorage")
-	}
-	// сохранить короткий и оригинальный URL в базу данных
-	err = db.Store(shortID, originalURL)
-	if err != nil {
-		log.Warn().Err(err).Msg("Cannot save shortID in the database")
+// Если указана DatabaseDSN в конфигурации, то сохранять данные в базу данных.
+// В противном случае, если указан FileStoragePath в конфигурации, то сохранять данные в файловое хранилище.
+// Если ни один из параметров не указан, то ничего не сохранять.
+func AddToStore(shortID, originalURL string) {
+	switch {
+	case config.Params.DatabaseDSN != "":
+		// сохранить shortID и оригинальный URL в базу данных
+		err := db.Store(shortID, originalURL)
+		if err != nil {
+			log.Warn().Err(err).Msg("Cannot save shortID in the database")
+		}
+	case config.Params.FileStoragePath != "":
+		// сохранить shortID и оригинальный URL в файловое хранилище
+		err := filestorage.Store(config.Params.FileStoragePath, app.ShortURL(shortID), originalURL)
+		if err != nil {
+			log.Warn().Err(err).Msg("Cannot save shortened url in the filestorage")
+		}
+	default:
+		log.Info().Msg("AddToStore(). No persistent data store specified")
 	}
 }
 
-// generateShortURL генерирует короткий URL и сохраняет его в хранилище.
-func generateShortURL(originalURL string) string {
-	// Сгенерировать короткий id и сохранить его
+// generateShortURL - генерирует короткий URL и сохраняет его в хранилище.
+func generateShortURL(originalURL string) (shortURL string) {
+	// Сгенерировать короткий id
 	shortID := shortener.Shorten(originalURL)
+	// и сохранить его в хранилище в RAM
 	savedID, added := storage.Set(shortID, originalURL)
-	// Сгенерировать короткий URL
-	shortURL := config.Params.BaseURL + "/" + savedID
 
-	// Если это новый shortID который был добавлен в хранилище в RAM, то есть added == true,
-	// то сохранить короткий и оригинальный URL в базу данных и/или в файловое хранилище
+	// Если это новый savedID, то есть added == true,
+	// то сохранить savedID и оригинальный URL в базу данных и/или в файловое хранилище
 	if added {
-		AddToStore(savedID, shortURL, originalURL)
+		AddToStore(savedID, originalURL)
 	}
-	return shortURL
+	return app.ShortURL(shortID)
 }
 
 // ShortenURLHandler обрабатывает POST-запросы для создания короткого URL.

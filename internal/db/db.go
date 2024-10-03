@@ -59,3 +59,33 @@ func Store(shortID, originalURL string) error {
 	_, err := DB.Exec("INSERT INTO urls (short_id, original_url) VALUES ($1, $2)", shortID, originalURL)
 	return err
 }
+
+// GetData - возвращает данные из базы данных в виде map[string]string,
+// где ключ - short_id, значение - original_url.
+func GetData() (data map[string]string, err error) {
+	rows, err := DB.Queryx("SELECT short_id, original_url FROM urls")
+	if err != nil {
+		return nil, err
+	}
+
+	data = make(map[string]string)
+
+	for rows.Next() {
+		var shortID, originalURL string
+		err = rows.Scan(&shortID, &originalURL)
+		if err != nil {
+			log.Warn().Err(err).Msg("GetData Cannot scan row")
+			continue
+		}
+		data[shortID] = originalURL
+	}
+
+	return data, err
+}
+
+// // LoadData - загружает данные из map[string]string, где ключ - short_id, значение - original_url, в базу данных.
+// func LoadData(data map[string]string) {
+// 	for shortID, originalURL := range data {
+// 		Store(shortID, originalURL)
+// 	}
+// }

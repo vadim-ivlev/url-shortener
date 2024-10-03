@@ -55,6 +55,13 @@ func Set(key, value string) (string, bool) {
 	return key, true
 }
 
+// LoadData - загружает данные из map[string]string, где ключ - short_id, значение - original_url, в storage.
+func LoadData(data map[string]string) {
+	for shortID, originalURL := range data {
+		Set(shortID, originalURL)
+	}
+}
+
 // Get возвращает значение для данного ключа.
 // Если ключ не найден, возвращается пустая строка.
 func Get(key string) (value string) {
@@ -66,7 +73,7 @@ func Get(key string) (value string) {
 	return value
 }
 
-func PrintKeyValue() {
+func PrintContent() {
 	fmt.Println("Storage: # key value >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 	n := 1
 	for k, v := range dm.keyToValue {
