@@ -76,7 +76,7 @@ func Get(key string) (value string) {
 // PrintContent выводит содержимое хранилища в консоль.
 // limit - количество элементов, которые будут выведены.
 func PrintContent(limit int) {
-	log.Info().Msg(fmt.Sprintf("RAM Storage contains %d records", len(dm.keyToValue)))
+	log.Info().Msgf("RAM Storage contains %d records", len(dm.keyToValue))
 	n := 0
 	for k, v := range dm.keyToValue {
 		n++

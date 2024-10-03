@@ -4,7 +4,6 @@ package db
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/rs/zerolog/log"
 	"github.com/vadim-ivlev/url-shortener/internal/storage"
@@ -53,5 +52,5 @@ func LoadData() {
 		log.Warn().Err(err).Msg("loadDataFromDB(). Cannot get data from DB")
 	}
 	storage.LoadData(data)
-	log.Info().Msg(fmt.Sprintf("%d Records loaded from database", len(data)))
+	log.Info().Msgf("%d Records loaded from database", len(data))
 }

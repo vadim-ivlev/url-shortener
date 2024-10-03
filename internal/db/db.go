@@ -2,7 +2,6 @@ package db
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -30,7 +29,7 @@ func Connect(numAttempts int) (err error) {
 			log.Info().Msg("Connected to DB")
 			return err
 		}
-		log.Warn().Err(err).Msg(fmt.Sprintf("Waiting for db connection. Attempt # %d", i))
+		log.Warn().Err(err).Msgf("Waiting for db connection. Attempt # %d", i)
 		time.Sleep(time.Second)
 	}
 	log.Error().Msg("Failed to connect to DB")

@@ -4,7 +4,6 @@ package filestorage
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 
 	"github.com/rs/zerolog/log"
@@ -39,6 +38,6 @@ func LoadData() ([]fileStorageRecord, error) {
 		storage.Set(shortID, record.OriginalURL)
 	}
 
-	log.Info().Msg(fmt.Sprintf("%d Records loaded from filestorage", len(records)))
+	log.Info().Msgf("%d Records loaded from filestorage", len(records))
 	return records, nil
 }
