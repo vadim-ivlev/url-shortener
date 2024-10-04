@@ -193,17 +193,18 @@ func TestPingHandler(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodGet, "/ping", nil)
 
+	// отключенная БД
+	db.Disconnect()
+	rec := httptest.NewRecorder()
+	PingHandler(rec, req)
+	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+
 	// подключенная БД
 	db.Connect(3)
-	rec := httptest.NewRecorder()
+	rec = httptest.NewRecorder()
 	PingHandler(rec, req)
 	assert.Equal(t, http.StatusOK, rec.Code)
 
-	// отключенная БД
-	db.Disconnect()
-	rec = httptest.NewRecorder()
-	PingHandler(rec, req)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
 }
 
 /*
