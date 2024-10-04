@@ -16,6 +16,7 @@ import (
 	"github.com/vadim-ivlev/url-shortener/internal/app"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
 	"github.com/vadim-ivlev/url-shortener/internal/db"
+	"github.com/vadim-ivlev/url-shortener/internal/logger"
 	"github.com/vadim-ivlev/url-shortener/internal/storage"
 )
 
@@ -29,6 +30,7 @@ func skipCI(t *testing.T) {
 func TestMain(m *testing.M) {
 	// Перейти в корневую директорию проекта
 	os.Chdir("../../")
+	logger.NoColor = true
 
 	app.InitApp()
 
