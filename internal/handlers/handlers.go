@@ -14,8 +14,12 @@ import (
 	"github.com/vadim-ivlev/url-shortener/internal/storage"
 )
 
-// generateShortURL - генерирует короткий URL и сохраняет его в хранилище.
-func generateShortURL(originalURL string) (shortURL string) {
+// generateAndSaveShortURL - генерирует короткий URL и сохраняет его в хранилище.
+// originalURL - оригинальный URL.
+// Возвращает:
+// shortURL - короткий URL
+// added -  флаг, добавлен ли новый короткий URL в БД или файловое хранилище.
+func generateAndSaveShortURL(originalURL string) (shortURL string, added bool) {
 	// Сгенерировать короткий id
 	shortID := shortener.Shorten(originalURL)
 	// Cохранить короткий id в хранилище в RAM
@@ -26,7 +30,7 @@ func generateShortURL(originalURL string) (shortURL string) {
 	if added {
 		app.AddToStore(savedID, originalURL)
 	}
-	return app.ShortURL(shortID)
+	return app.ShortURL(shortID), added
 }
 
 // ShortenURLHandler обрабатывает POST-запросы для создания короткого URL.
@@ -43,9 +47,16 @@ func ShortenURLHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Сгенерировать короткий id и сохранить его
-	shortURL := generateShortURL(originalURL)
+	shortURL, added := generateAndSaveShortURL(originalURL)
 
-	w.WriteHeader(http.StatusCreated)
+	// Определить статус ответа
+	status := http.StatusCreated
+	// Если короткий URL уже существует, то вернуть статус 409
+	if !added {
+		status = http.StatusConflict
+	}
+
+	w.WriteHeader(status)
 	w.Header().Set("Content-Type", "text/plain")
 	w.Write([]byte(shortURL))
 }
@@ -134,7 +145,7 @@ func APIShortenHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Сгенерировать короткий id и сохранить его
-	shortURL := generateShortURL(originalURL)
+	shortURL, added := generateAndSaveShortURL(originalURL)
 
 	resp := struct {
 		Result string `json:"result"`
@@ -148,7 +159,15 @@ func APIShortenHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	// Определить статус ответа
+	status := http.StatusCreated
+	// Если короткий URL уже существует, то вернуть статус 409
+	if !added {
+		status = http.StatusConflict
+	}
+
+	// Отправляем ответ
+	w.WriteHeader(status)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(respBody)
 }
@@ -249,7 +268,7 @@ func APIShortenBatchHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		// Сгенерировать короткий id и сохранить его в хранилище и в БД
-		shortURL := generateShortURL(originalURL)
+		shortURL, _ := generateAndSaveShortURL(originalURL)
 		outputRecords = append(outputRecords, outRec{CorrelationID: r.CorrelationID, ShortURL: shortURL})
 	}
 

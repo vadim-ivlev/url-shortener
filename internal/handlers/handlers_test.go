@@ -87,7 +87,7 @@ func InitTestTable() {
 			name: "Google2",
 			url:  "https://www.google.com",
 			want: want{
-				postReturnCode: http.StatusCreated,
+				postReturnCode: http.StatusConflict,
 				getReturnCode:  http.StatusTemporaryRedirect,
 				shortURL:       config.Params.BaseURL + "/F870F1E9",
 				contentType:    "text/plain",
@@ -98,6 +98,10 @@ func InitTestTable() {
 
 func TestShortenURLHandler(t *testing.T) {
 	skipCI(t)
+
+	// Очищаем хранилище
+	storage.Clear()
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(tt.url))
@@ -109,7 +113,6 @@ func TestShortenURLHandler(t *testing.T) {
 			bodyString := strings.TrimSpace(rec.Body.String())
 			assert.Equal(t, tt.want.shortURL, bodyString)
 			assert.Contains(t, rec.Header().Get("Content-Type"), tt.want.contentType)
-
 		})
 	}
 	storage.PrintContent(3)
@@ -117,6 +120,10 @@ func TestShortenURLHandler(t *testing.T) {
 
 func TestAPIShortenHandler(t *testing.T) {
 	skipCI(t)
+
+	// Очищаем хранилище
+	storage.Clear()
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, "/api/shorten", strings.NewReader(`{"url":"`+tt.url+`"}`))

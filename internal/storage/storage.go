@@ -31,7 +31,16 @@ func Create() {
 		valueToKey: make(map[string]string),
 		keyToValue: make(map[string]string),
 	}
-	log.Info().Msg("storage package initialized")
+	log.Info().Msg("storage initialized")
+}
+
+// Clear очищает хранилище.
+func Clear() {
+	dm = &DoubleMap{
+		valueToKey: make(map[string]string),
+		keyToValue: make(map[string]string),
+	}
+	log.Info().Msg("storage cleared")
 }
 
 // Set сохраняет ключ и значени в DoubleMap.
