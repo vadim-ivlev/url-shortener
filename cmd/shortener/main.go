@@ -1,10 +1,8 @@
 package main
 
 import (
-	// "log"
-	"github.com/rs/zerolog/log"
-
 	"github.com/vadim-ivlev/url-shortener/internal/config"
+	"github.com/vadim-ivlev/url-shortener/internal/db"
 	"github.com/vadim-ivlev/url-shortener/internal/filestorage"
 	"github.com/vadim-ivlev/url-shortener/internal/logger"
 	"github.com/vadim-ivlev/url-shortener/internal/server"
@@ -14,11 +12,9 @@ import (
 func main() {
 	logger.InitializeLogger()
 	config.ParseCommandLine()
+	config.PrintParams()
 	storage.Create()
-	_, err := filestorage.LoadData(config.Params.FileStoragePath)
-	if err != nil {
-		log.Warn().Err(err).Msg("Filestorage not found. Probably this is the first launch.")
-	}
-	storage.PrintKeyValue()
+	filestorage.LoadDataAndLog(config.Params.FileStoragePath)
+	db.Connect(1)
 	server.ServeChi(config.Params.ServerAddress)
 }

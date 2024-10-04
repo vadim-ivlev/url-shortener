@@ -10,14 +10,28 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
+	"github.com/vadim-ivlev/url-shortener/internal/db"
+	"github.com/vadim-ivlev/url-shortener/internal/filestorage"
+	"github.com/vadim-ivlev/url-shortener/internal/logger"
 	"github.com/vadim-ivlev/url-shortener/internal/storage"
 )
 
+func skipCI(t *testing.T) {
+	if os.Getenv("CI") != "" {
+		log.Info().Msg("Skipping testing in CI environment")
+		t.Skip("Skipping testing in CI environment")
+	}
+}
+
 func TestMain(m *testing.M) {
+	logger.InitializeLogger()
 	config.ParseCommandLine()
 	storage.Create()
+	filestorage.LoadDataAndLog(config.Params.FileStoragePath)
+
 	InitTestTable()
 	os.Exit(m.Run())
 }
@@ -170,4 +184,22 @@ func getID(url string) (id string) {
 	}
 	fmt.Printf("getId()   : '%v'\n", id)
 	return
+}
+
+func TestPingHandler(t *testing.T) {
+	skipCI(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/ping", nil)
+
+	// подключенная БД
+	db.Connect(3)
+	rec := httptest.NewRecorder()
+	PingHandler(rec, req)
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	// отключенная БД
+	db.Disconnect()
+	rec = httptest.NewRecorder()
+	PingHandler(rec, req)
+	assert.Equal(t, http.StatusInternalServerError, rec.Code)
 }
