@@ -153,6 +153,20 @@ func APIShortenHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(respBody)
 }
 
+// Типы входных и выходных данных для APIShortenBatchHandler **********************
+
+// Тип записи входных данных
+type inpRec struct {
+	CorrelationID string `json:"correlation_id"`
+	OriginalURL   string `json:"original_url"`
+}
+
+// Тип записи выходных данных
+type outRec struct {
+	CorrelationID string `json:"correlation_id"`
+	ShortURL      string `json:"short_url"`
+}
+
 /*
 APIShortenBatchHandler - принимает в теле запроса множество URL для сокращения в формате:
 ```json
@@ -192,6 +206,7 @@ APIShortenBatchHandler - принимает в теле запроса множ�
 - необходимо избегать формирования условий для возникновения состояния гонки (race condition).
 */
 func APIShortenBatchHandler(w http.ResponseWriter, r *http.Request) {
+	// Прочитать тело запроса
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -200,14 +215,11 @@ func APIShortenBatchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Массив для хранения данных запроса
-	var req []struct {
-		CorrelationID string `json:"correlation_id"`
-		OriginalURL   string `json:"original_url"`
-	}
+	// Массив входных данных запроса
+	inputRecords := []inpRec{}
 
-	// Распарсить тело запроса
-	err = json.Unmarshal(body, &req)
+	// Распарсить тело запроса в массив входных данных
+	err = json.Unmarshal(body, &inputRecords)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json")
@@ -216,41 +228,33 @@ func APIShortenBatchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Если пустой батч, то вернуть ошибку
-	if len(req) == 0 {
+	// Если массив входных данных пустой, то вернуть ошибку
+	if len(inputRecords) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(`{"error":"Empty batch"}`))
 		return
 	}
 
-	// Массив для хранения данных ответа
-	resp := make([]struct {
-		CorrelationID string `json:"correlation_id"`
-		ShortURL      string `json:"short_url"`
-	}, 0, len(req))
+	// Массив выходных данных ответа c емкостью равной длине входного массива
+	outputRecords := make([]outRec, 0, len(inputRecords))
 
-	// Обработать каждый элемент массива запроса
-	for _, r := range req {
+	// Обработать каждый элемент массива входных данных
+	for _, r := range inputRecords {
 		originalURL := r.OriginalURL
+
+		// Если originalURL пустой, то вернуть пустой shortURL, не сохраняя его в хранилище и БД
 		if originalURL == "" {
-			resp = append(resp, struct {
-				CorrelationID string `json:"correlation_id"`
-				ShortURL      string `json:"short_url"`
-			}{CorrelationID: r.CorrelationID, ShortURL: ""})
+			outputRecords = append(outputRecords, outRec{CorrelationID: r.CorrelationID, ShortURL: ""})
 			continue
 		}
-
-		// Сгенерировать короткий id и сохранить его
+		// Сгенерировать короткий id и сохранить его в хранилище и в БД
 		shortURL := generateShortURL(originalURL)
-
-		resp = append(resp, struct {
-			CorrelationID string `json:"correlation_id"`
-			ShortURL      string `json:"short_url"`
-		}{CorrelationID: r.CorrelationID, ShortURL: shortURL})
+		outputRecords = append(outputRecords, outRec{CorrelationID: r.CorrelationID, ShortURL: shortURL})
 	}
 
-	respBody, err := json.Marshal(resp)
+	// Подготовливаем тело ответа
+	respBody, err := json.Marshal(outputRecords)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Header().Set("Content-Type", "application/json")
@@ -258,6 +262,7 @@ func APIShortenBatchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Отправляем ответ
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(respBody)

@@ -248,25 +248,10 @@ APIShortenBatchHandler принимает в теле запроса множе�
 func TestAPIShortenBatchHandler(t *testing.T) {
 	skipCI(t)
 
-	// Структура записи входных данных
-	type inpRec struct {
-		CorrelationID string `json:"correlation_id"`
-		OriginalURL   string `json:"original_url"`
-	}
-	// Структура записи выходных данных
-	type outRec struct {
-		CorrelationID string `json:"correlation_id"`
-		ShortURL      string `json:"short_url"`
-	}
-
-	// Типы для массивов входных и выходных данных
-	type inpArray []inpRec
-	type outArray []outRec
-
 	// Тестовые входные данные
-	var emptyInput inpArray = nil
-	var noElementsInput inpArray = []inpRec{}
-	var normalInput inpArray = []inpRec{
+	var emptyInput []inpRec = nil
+	var noElementsInput = []inpRec{}
+	var normalInput = []inpRec{
 		{
 			CorrelationID: "0",
 			OriginalURL:   "",
@@ -283,7 +268,7 @@ func TestAPIShortenBatchHandler(t *testing.T) {
 
 	// Типы тестовых аргументов и ожидаемых результатов
 	type args struct {
-		inputRecords inpArray
+		inputRecords []inpRec
 	}
 
 	type want struct {
@@ -352,7 +337,7 @@ func TestAPIShortenBatchHandler(t *testing.T) {
 			log.Info().Msgf("Body: %v", rec.Body.String())
 
 			// Распарсить тело ответа в массив структур
-			outputRecords := outArray{}
+			outputRecords := []outRec{}
 			err := json.Unmarshal(rec.Body.Bytes(), &outputRecords)
 			if err != nil {
 				log.Error().Err(err).Msg("Error")
