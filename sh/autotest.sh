@@ -77,3 +77,8 @@ echo ; echo ; echo "Code Increment #12 tests ------------------------"
 shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration12$ \
     -binary-path=cmd/shortener/shortener \
     -database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable'
+
+echo ; echo ; echo "Code Increment #13 tests ------------------------"
+shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration13$ \
+    -binary-path=cmd/shortener/shortener \
+    -database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable'
