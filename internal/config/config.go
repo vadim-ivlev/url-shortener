@@ -31,20 +31,21 @@ func getDefaultDatabaseDSN() string {
 	return ""
 }
 
+// ParseCommandLine - читает параметры командной строки с значениями по умолчанию
 func ParseCommandLine() {
-	// Читаем параметры командной строки с значениями по умолчанию
 	flag.StringVar(&Params.ServerAddress, "a", "localhost:8080", "HTTP server address")
 	flag.StringVar(&Params.BaseURL, "b", "http://localhost:8080", "Base URL")
 	flag.StringVar(&Params.FileStoragePath, "f", "./data/file-storage.txt", "File storage path")
 	flag.StringVar(&Params.DatabaseDSN, "d", getDefaultDatabaseDSN(), "Database DSN")
-
 	flag.Parse()
+}
 
-	// Читаем переменные окружения (если они есть) и перезаписываем значения полученные из командной строки
+// ParseEnv - читает переменные окружения (если они есть) и сохраняет их в структуру Params
+func ParseEnv() {
+	// Читаем переменные окружения
 	if err := env.Parse(&Params); err != nil {
 		fmt.Printf("%+v\n", err)
 	}
-
 }
 
 // JSONString - сериализуем структуру в формат JSON

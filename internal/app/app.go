@@ -19,8 +19,11 @@ import (
 func InitApp() {
 	// Инициализировать логгер
 	logger.InitializeLogger()
+
 	// Разобрать параметры командной строки
 	config.ParseCommandLine()
+	// Разобрать переменные окружения
+	config.ParseEnv()
 	// Вывести параметры конфигурации в лог
 	config.PrintParams()
 
