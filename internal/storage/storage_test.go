@@ -82,19 +82,6 @@ func TestGetData(t *testing.T) {
 	Clear()
 
 	// Add test data
-	urls := AddTestData()
-	// Get data
-	data := GetData()
-
-	// Check if all URLs are in the data
-	for shortID, url := range urls {
-		dataUrl := data[shortID]
-		assert.Equal(t, url, dataUrl)
-	}
-}
-
-func AddTestData() map[string]string {
-	// URLs to add
 	urls := map[string]string{
 		"google":  "https://www.google.com",
 		"youtube": "https://www.youtube.com",
@@ -104,5 +91,13 @@ func AddTestData() map[string]string {
 	for shortID, url := range urls {
 		Set(shortID, url)
 	}
-	return urls
+
+	// Get data
+	data := GetData()
+
+	// Check if all URLs are in the data
+	for shortID, url := range urls {
+		dataUrl := data[shortID]
+		assert.Equal(t, url, dataUrl)
+	}
 }
