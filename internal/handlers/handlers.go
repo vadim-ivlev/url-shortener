@@ -322,7 +322,7 @@ type dataRec struct {
 }
 
 /*
-возвращает пользователю все когда-либо сокращённые им `URL` в формате:
+APIUserURLsHandler - возвращает пользователю все когда-либо сокращённые им `URL` в формате:
 ```json
 [
 
@@ -342,6 +342,7 @@ func APIUserURLsHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		log.Error().Msg("User ID not found in context")
 	}
+	log.Info().Msgf("APIUserURLsHandler got User ID %v ", userID)
 
 	// Получить все короткие URL пользователя
 	urls := app.GetUserURLs(userID)

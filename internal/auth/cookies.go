@@ -1,14 +1,15 @@
 package auth
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"log"
 	"net/http"
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 )
 
 // Секретный ключ для HMAC. В реальном приложении храните его безопасно.
@@ -17,13 +18,14 @@ var secretKey = []byte("your-secret-key")
 // Имя куки
 const cookieName = "auth"
 
-// Middleware для аутентификации пользователя
-func authMiddleware(next http.Handler) http.Handler {
+// AuthMiddleware - middleware для аутентификации пользователя
+func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Попытка получить куки из запроса
 		cookie, err := r.Cookie(cookieName)
 		if err != nil {
-			// Куки отсутствует, создаём новую
+			// Куки отсутствует, создаём новую и добавляем в ответ перед продолжением обработки запроса
+			log.Warn().Msgf("Cookie %v not found. Adding a new one to the response", cookieName)
 			newID := uuid.New().String()
 			signedCookie := signCookie(newID)
 			http.SetCookie(w, &http.Cookie{
@@ -49,9 +51,11 @@ func authMiddleware(next http.Handler) http.Handler {
 		signature := parts[1]
 
 		// Проверяем подпись
+		log.Info().Msgf("Checking cookie signature for user ID %v", userID)
 		expectedSignature := computeHMAC(userID, secretKey)
 		if !hmac.Equal([]byte(signature), []byte(expectedSignature)) {
 			// Подпись неверна, создаём новую куку
+			log.Warn().Msgf("Invalid cookie signature for user ID %v. Adding a new cookie %v to the response", userID, cookieName)
 			newID := uuid.New().String()
 			signedCookie := signCookie(newID)
 			http.SetCookie(w, &http.Cookie{
@@ -69,15 +73,17 @@ func authMiddleware(next http.Handler) http.Handler {
 		// Проверяем, что ID существует
 		if userID == "" {
 			http.Error(w, "Unauthorized: No user ID", http.StatusUnauthorized)
+			log.Error().Msg("No user ID in the cookie")
 			return
 		}
 
 		// Можно добавить ID пользователя в контекст запроса, если необходимо
-		// ctx := context.WithValue(r.Context(), "userID", userID)
-		// next.ServeHTTP(w, r.WithContext(ctx))
+		ctx := context.WithValue(r.Context(), "userID", userID)
+		log.Info().Msgf("User ID %v is authenticated and added to request context", userID)
+		next.ServeHTTP(w, r.WithContext(ctx))
 
 		// Продолжаем обработку запроса
-		next.ServeHTTP(w, r)
+		// next.ServeHTTP(w, r)
 	})
 }
 
@@ -94,21 +100,21 @@ func computeHMAC(message string, key []byte) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-// Пример обработчика, защищённого middleware
-func protectedHandler(w http.ResponseWriter, r *http.Request) {
-	// Здесь можно получить userID из контекста, если вы его добавили
-	// userID := r.Context().Value("userID").(string)
-	w.Write([]byte("Доступ разрешён"))
-}
+// // Пример обработчика, защищённого middleware
+// func protectedHandler(w http.ResponseWriter, r *http.Request) {
+// 	// Здесь можно получить userID из контекста, если вы его добавили
+// 	// userID := r.Context().Value("userID").(string)
+// 	w.Write([]byte("Доступ разрешён"))
+// }
 
-func main() {
-	mux := http.NewServeMux()
-	// Применяем middleware к защищённому маршруту
-	mux.Handle("/protected", authMiddleware(http.HandlerFunc(protectedHandler)))
+// func main() {
+// 	mux := http.NewServeMux()
+// 	// Применяем middleware к защищённому маршруту
+// 	mux.Handle("/protected", authMiddleware(http.HandlerFunc(protectedHandler)))
 
-	// Запуск сервера
-	log.Println("Сервер запущен на :8080")
-	if err := http.ListenAndServe(":8080", mux); err != nil {
-		log.Fatalf("Ошибка запуска сервера: %v", err)
-	}
-}
+// 	// Запуск сервера
+// 	log.Println("Сервер запущен на :8080")
+// 	if err := http.ListenAndServe(":8080", mux); err != nil {
+// 		log.Fatalf("Ошибка запуска сервера: %v", err)
+// 	}
+// }
