@@ -40,25 +40,11 @@ func ParseCommandLine() {
 
 	flag.Parse()
 
-	// Читаем переменные окружения
-	envVars := config{}
-	if err := env.Parse(&envVars); err != nil {
+	// Читаем переменные окружения (если они есть) и перезаписываем значения полученные из командной строки
+	if err := env.Parse(&Params); err != nil {
 		fmt.Printf("%+v\n", err)
 	}
 
-	// Если переменные окружения заданы, то используем их
-	if envVars.ServerAddress != "" {
-		Params.ServerAddress = envVars.ServerAddress
-	}
-	if envVars.BaseURL != "" {
-		Params.BaseURL = envVars.BaseURL
-	}
-	if envVars.FileStoragePath != "" {
-		Params.FileStoragePath = envVars.FileStoragePath
-	}
-	if envVars.DatabaseDSN != "" {
-		Params.DatabaseDSN = envVars.DatabaseDSN
-	}
 }
 
 // JSONString - сериализуем структуру в формат JSON
