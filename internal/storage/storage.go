@@ -95,3 +95,16 @@ func PrintContent(limit int) {
 		fmt.Printf("%4v %v %v\n", n, k, v)
 	}
 }
+
+// GetData - возвращает данные  в виде map[string]string,
+// где ключ - short_id, значение - original_url.
+func GetData() (data map[string]string) {
+	dm.mutex.Lock()
+	defer dm.mutex.Unlock()
+
+	data = make(map[string]string)
+	for k, v := range dm.keyToValue {
+		data[k] = v
+	}
+	return
+}

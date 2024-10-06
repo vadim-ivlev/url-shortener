@@ -104,3 +104,23 @@ func AddToStore(ctx context.Context, shortID, originalURL string) (err error) {
 	}
 	return nil
 }
+
+// GetUserURLs возвращает пользователю все когда-либо сокращённые им `URL` в формате:
+// ```json
+// [
+//
+//	{
+//	    "short_url": "http://...",
+//	    "original_url": "http://..."
+//	},
+//	...
+//
+// ]
+func GetUserURLs(userID string) (urls []map[string]string) {
+	urls = make([]map[string]string, 0)
+	// Получить все короткие URL пользователя
+	for shortID, originalURL := range storage.GetData() {
+		urls = append(urls, map[string]string{"short_url": ShortURL(shortID), "original_url": originalURL})
+	}
+	return urls
+}

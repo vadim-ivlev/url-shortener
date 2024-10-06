@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/rs/zerolog/log"
 	"github.com/vadim-ivlev/url-shortener/internal/app"
 	"github.com/vadim-ivlev/url-shortener/internal/db"
 	"github.com/vadim-ivlev/url-shortener/internal/shortener"
@@ -177,7 +178,7 @@ func APIShortenHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Определить статус ответа
+	// Установить статус ответа в зависимости от наличия записи
 	status := http.StatusCreated
 	// Если короткий URL уже существует, то вернуть статус 409
 	if !aNewOne {
@@ -310,6 +311,59 @@ func APIShortenBatchHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Отправляем ответ
 	w.WriteHeader(http.StatusCreated)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(respBody)
+}
+
+// dataRec - Тип записи выходных данных для APIUserURLsHandler
+type dataRec struct {
+	ShortURL    string `json:"short_url"`
+	OriginalURL string `json:"original_url"`
+}
+
+/*
+возвращает пользователю все когда-либо сокращённые им `URL` в формате:
+```json
+[
+
+	{
+	    "short_url": "http://...",
+	    "original_url": "http://..."
+	},
+	...
+
+]
+```
+- При отсутствии сокращённых пользователем URL хендлер должен отдавать HTTP-статус `204 No Content`.
+*/
+func APIUserURLsHandler(w http.ResponseWriter, r *http.Request) {
+	// Получить ID пользователя из контекста запроса
+	userID, ok := r.Context().Value("userID").(string)
+	if !ok {
+		log.Error().Msg("User ID not found in context")
+	}
+
+	// Получить все короткие URL пользователя
+	urls := app.GetUserURLs(userID)
+
+	// Подготовливаем тело ответа
+	respBody, err := json.Marshal(urls)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"error":"Marshal error"}`))
+		return
+	}
+
+	// Устанавливаем статус ответа в зависимости от наличия записей
+	status := http.StatusOK
+	// Если коротких URL нет, то вернуть статус 204
+	if len(urls) == 0 {
+		status = http.StatusNoContent
+	}
+
+	// Отправляем ответ
+	w.WriteHeader(status)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(respBody)
 }

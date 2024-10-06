@@ -77,3 +77,28 @@ func TestGet(t *testing.T) {
 		})
 	}
 }
+
+func TestGetData(t *testing.T) {
+	// Add test data
+	urls := AddTestData()
+	// Get data
+	data := GetData()
+	// Check if all URLs are in the data
+	for shortID, url := range urls {
+		assert.Equal(t, url, data[shortID])
+	}
+}
+
+func AddTestData() map[string]string {
+	// URLs to add
+	urls := map[string]string{
+		"google":  "https://www.google.com",
+		"youtube": "https://www.youtube.com",
+		"yandex":  "https://www.yandex.ru",
+	}
+	// Add URLs
+	for shortID, url := range urls {
+		Set(shortID, url)
+	}
+	return urls
+}

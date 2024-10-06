@@ -412,3 +412,114 @@ func PrettyString(v interface{}) string {
 	b, _ := json.MarshalIndent(v, "", "  ")
 	return string(b)
 }
+
+func TestAPIUserURLsHandler(t *testing.T) {
+	skipCI(t)
+
+	// Типы тестовых аргументов и ожидаемых результатов
+	type args struct {
+		inputRecords map[string]string
+	}
+
+	type want struct {
+		status      int
+		contentType string
+		numRecords  int
+	}
+
+	// Тестовые случаи
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{
+			name: "Null",
+			args: args{
+				inputRecords: nil,
+			},
+			want: want{
+				status:      http.StatusNoContent,
+				contentType: "application/json",
+				numRecords:  0,
+			},
+		},
+		{
+			name: "Empty",
+			args: args{
+				inputRecords: map[string]string{},
+			},
+			want: want{
+				status:      http.StatusNoContent,
+				contentType: "application/json",
+				numRecords:  0,
+			},
+		},
+		{
+			name: "Normal",
+			args: args{
+				inputRecords: map[string]string{
+					"0": "https://www.google.com",
+					"1": "https://www.youtube.com",
+				},
+			},
+			want: want{
+				status:      http.StatusOK,
+				contentType: "application/json",
+				numRecords:  2,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Очистить хранилище
+			storage.Clear()
+
+			// Добавить записи в хранилище
+			for shortID, originalURL := range tt.args.inputRecords {
+				storage.Set(shortID, originalURL)
+			}
+
+			req := httptest.NewRequest(http.MethodGet, "/api/user/urls", nil)
+			rec := httptest.NewRecorder()
+			APIUserURLsHandler(rec, req)
+
+			// Проверка статуса ответа
+			status := rec.Code
+			log.Info().Msgf("Status: %v", status)
+			assert.Equal(t, tt.want.status, status)
+
+			// Проверка типа контента
+			contentType := rec.Header().Get("Content-Type")
+			log.Info().Msgf("Content-Type: %v", contentType)
+			assert.Equal(t, tt.want.contentType, contentType)
+
+			// Печать тела ответа
+			log.Info().Msgf("Body: %v", rec.Body.String())
+
+			// Распарсить тело ответа в массив структур
+			outputRecords := []dataRec{}
+			err := json.Unmarshal(rec.Body.Bytes(), &outputRecords)
+			if err != nil {
+				log.Error().Err(err).Msg("Error")
+			}
+
+			// Печать массива структур ответа
+			log.Info().Msgf("outputRecords: %v", PrettyString(outputRecords))
+
+			// Проверка количества элементов в ответе
+			assert.Equal(t, tt.want.numRecords, len(outputRecords), "Number of records in response")
+
+			// Проверка корреляционных идентификаторов
+			for i, outputRecord := range outputRecords {
+				log.Info().Msgf("Output record %d : %v", i, outputRecord)
+				shortID := app.ShortID(outputRecord.ShortURL)
+				originalURL, ok := tt.args.inputRecords[shortID]
+				assert.True(t, ok)
+				assert.Equal(t, originalURL, outputRecord.OriginalURL)
+			}
+		})
+	}
+
+}
