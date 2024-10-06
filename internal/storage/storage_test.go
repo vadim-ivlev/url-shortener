@@ -79,13 +79,17 @@ func TestGet(t *testing.T) {
 }
 
 func TestGetData(t *testing.T) {
+	Clear()
+
 	// Add test data
 	urls := AddTestData()
 	// Get data
 	data := GetData()
+
 	// Check if all URLs are in the data
 	for shortID, url := range urls {
-		assert.Equal(t, url, data[shortID])
+		dataUrl := data[shortID]
+		assert.Equal(t, url, dataUrl)
 	}
 }
 
