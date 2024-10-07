@@ -8,33 +8,28 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
-
-// Секретный ключ для HMAC. В реальном приложении храните его безопасно.
-var secretKey = []byte("your-secret-key")
-
-// Имя куки
-const cookieName = "auth"
 
 // AuthMiddleware - middleware для аутентификации пользователя
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cookieName := Params.CookieName
 		// Попытка получить куки из запроса
 		cookie, err := r.Cookie(cookieName)
 		if err != nil {
 			// Куки отсутствует, создаём новую и добавляем в ответ перед продолжением обработки запроса
-			log.Warn().Msgf("Cookie %v not found. Adding a new one to the response", cookieName)
-			newID := uuid.New().String()
+			log.Warn().Msgf("Cookie '%v' not found. Adding a new one to the response", cookieName)
+			newID := Params.UserID //uuid.New().String()
+			log.Info().Msgf("New user ID is '%v' ", newID)
 			signedCookie := signCookie(newID)
 			http.SetCookie(w, &http.Cookie{
 				Name:  cookieName,
 				Value: signedCookie,
 				Path:  "/",
 				// Установите дополнительные параметры безопасности по необходимости
-				HttpOnly: true,
-				Secure:   true,
+				// HttpOnly: true,
+				// Secure:   true,
 			})
 			// Продолжаем обработку запроса
 			next.ServeHTTP(w, r)
@@ -52,11 +47,11 @@ func AuthMiddleware(next http.Handler) http.Handler {
 
 		// Проверяем подпись
 		log.Info().Msgf("Checking cookie signature for user ID %v", userID)
-		expectedSignature := computeHMAC(userID, secretKey)
+		expectedSignature := computeHMAC(userID, []byte(Params.SecretKey))
 		if !hmac.Equal([]byte(signature), []byte(expectedSignature)) {
 			// Подпись неверна, создаём новую куку
-			log.Warn().Msgf("Invalid cookie signature for user ID %v. Adding a new cookie %v to the response", userID, cookieName)
-			newID := uuid.New().String()
+			log.Warn().Msgf("Invalid cookie signature for user ID '%v'. Adding a new cookie '%v' to the response", userID, cookieName)
+			newID := Params.UserID //uuid.New().String()
 			signedCookie := signCookie(newID)
 			http.SetCookie(w, &http.Cookie{
 				Name:     cookieName,
@@ -79,7 +74,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 
 		// Можно добавить ID пользователя в контекст запроса, если необходимо
 		ctx := context.WithValue(r.Context(), "userID", userID)
-		log.Info().Msgf("User ID %v is authenticated and added to request context", userID)
+		log.Info().Msgf("User ID '%v' is authenticated and added to request context", userID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 
 		// Продолжаем обработку запроса
@@ -89,7 +84,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 
 // Функция для создания подписанной строки куки
 func signCookie(userID string) string {
-	signature := computeHMAC(userID, secretKey)
+	signature := computeHMAC(userID, []byte(Params.SecretKey))
 	return userID + "|" + signature
 }
 
