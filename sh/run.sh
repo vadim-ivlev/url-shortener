@@ -1,3 +1,4 @@
 #!/bin/bash
 
-go run cmd/shortener/main.go
+docker compose up -d
+go run cmd/shortener/main.go $@

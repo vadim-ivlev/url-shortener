@@ -57,8 +57,6 @@ func InitializeLogger() {
 // - Сведения об ответах должны содержать код статуса и размер содержимого ответа.
 func RequestLogger(h http.Handler) http.Handler {
 	logFn := func(w http.ResponseWriter, r *http.Request) {
-		// TODO:
-		// w.Header().Set("Content-Type", "application/json")
 		// встраиваем оригинальный http.ResponseWriter в loggingResponseWriter
 		logRespWriter := loggingResponseWriter{ResponseWriter: w}
 
