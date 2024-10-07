@@ -31,6 +31,15 @@ func AuthMiddleware(next http.Handler) http.Handler {
 				// HttpOnly: true,
 				// Secure:   true,
 			})
+
+			// Прерываем обработку запроса и возвращаем ошибку
+			// w.WriteHeader(http.StatusUnauthorized)
+			// w.Header().Set("Content-Type", "application/json")
+			// w.Write([]byte(`{"error":"Unauthorized: No user ID"}`))
+
+			// http.Error(w, "Cookie not found", http.StatusUnauthorized)
+			// return
+
 			// Продолжаем обработку запроса
 			next.ServeHTTP(w, r)
 			return
