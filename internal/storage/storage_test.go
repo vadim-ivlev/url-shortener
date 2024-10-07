@@ -97,7 +97,7 @@ func TestGetData(t *testing.T) {
 
 	// Check if all URLs are in the data
 	for shortID, url := range urls {
-		dataUrl := data[shortID]
-		assert.Equal(t, url, dataUrl)
+		dataURL := data[shortID]
+		assert.Equal(t, url, dataURL)
 	}
 }

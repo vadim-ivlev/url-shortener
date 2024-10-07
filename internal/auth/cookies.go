@@ -11,6 +11,9 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// contextKey - тип для ключа контекста
+type contextKey string
+
 // AuthMiddleware - middleware для аутентификации пользователя
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -82,7 +85,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		}
 
 		// Можно добавить ID пользователя в контекст запроса, если необходимо
-		ctx := context.WithValue(r.Context(), "userID", userID)
+		ctx := context.WithValue(r.Context(), contextKey("userID"), userID)
 		log.Info().Msgf("User ID '%v' is authenticated and added to request context", userID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 
