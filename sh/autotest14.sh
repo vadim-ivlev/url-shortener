@@ -11,7 +11,7 @@ rm -rf ./data
 
 echo "Запускаем базу данных, для эмуляции поведения GitHub CI ***********************"
 docker compose up -d
-sleep 1
+sleep 2
 
 echo ; echo ; echo "Building shortenertest ---------------------------"
 # go build -buildvcs=false -o cmd/shortener/shortener cmd/shortener/main.go

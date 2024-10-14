@@ -22,9 +22,9 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		cookie, err := r.Cookie(cookieName)
 		if err != nil {
 			// Куки отсутствует, создаём новую и добавляем в ответ перед продолжением обработки запроса
-			log.Warn().Msgf("Cookie '%v' not found. Adding a new one to the response", cookieName)
+			log.Warn().Msgf("AuthMiddleware> Cookie '%v' not found. Adding a new one to the response", cookieName)
 			newID := Params.UserID //uuid.New().String()
-			log.Info().Msgf("New user ID is '%v' ", newID)
+			log.Info().Msgf("AuthMiddleware> New user ID is '%v' ", newID)
 			signedCookie := signCookie(newID)
 			http.SetCookie(w, &http.Cookie{
 				Name:  cookieName,
@@ -58,11 +58,11 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		signature := parts[1]
 
 		// Проверяем подпись
-		log.Info().Msgf("Checking cookie signature for user ID %v", userID)
+		log.Info().Msgf("AuthMiddleware> Checking cookie signature for user ID %v", userID)
 		expectedSignature := computeHMAC(userID, []byte(Params.SecretKey))
 		if !hmac.Equal([]byte(signature), []byte(expectedSignature)) {
 			// Подпись неверна, создаём новую куку
-			log.Warn().Msgf("Invalid cookie signature for user ID '%v'. Adding a new cookie '%v' to the response", userID, cookieName)
+			log.Warn().Msgf("AuthMiddleware> Invalid cookie signature for user ID '%v'. Adding a new cookie '%v' to the response", userID, cookieName)
 			newID := Params.UserID //uuid.New().String()
 			signedCookie := signCookie(newID)
 			http.SetCookie(w, &http.Cookie{
@@ -79,14 +79,14 @@ func AuthMiddleware(next http.Handler) http.Handler {
 
 		// Проверяем, что ID существует
 		if userID == "" {
-			http.Error(w, "Unauthorized: No user ID", http.StatusUnauthorized)
-			log.Error().Msg("No user ID in the cookie")
+			log.Error().Msg("AuthMiddleware> No user ID in the cookie")
+			http.Error(w, "AuthMiddleware> Unauthorized: No user ID", http.StatusUnauthorized)
 			return
 		}
 
 		// Можно добавить ID пользователя в контекст запроса, если необходимо
 		ctx := context.WithValue(r.Context(), contextKey("userID"), userID)
-		log.Info().Msgf("User ID '%v' is authenticated and added to request context", userID)
+		log.Info().Msgf("AuthMiddleware> User ID '%v' is authenticated and added to request context", userID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 
 		// Продолжаем обработку запроса

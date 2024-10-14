@@ -327,8 +327,8 @@ APIUserURLsHandler - возвращает пользователю все ког
 [
 
 	{
-	    "short_url": "http://...",
-	    "original_url": "http://..."
+		"short_url": "http://...",
+		"original_url": "http://..."
 	},
 	...
 
@@ -342,9 +342,9 @@ func APIUserURLsHandler(w http.ResponseWriter, r *http.Request) {
 	// Получить ID пользователя из контекста запроса
 	userID, ok := r.Context().Value("userID").(string)
 	if !ok {
-		log.Error().Msg("User ID not found in context")
+		log.Error().Msg("APIUserURLsHandler> User ID not found in context")
 	}
-	log.Info().Msgf("APIUserURLsHandler got User ID '%v' ", userID)
+	log.Info().Msgf("APIUserURLsHandler>  Got User ID '%v' ", userID)
 
 	// Проверить, что ID пользователя не пустой
 	if userID == "" {
