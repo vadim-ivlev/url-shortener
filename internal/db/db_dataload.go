@@ -38,19 +38,22 @@ func GetData() (data map[string]string, err error) {
 		data[shortID] = originalURL
 	}
 
-	return data, err
+	return data, nil
 }
 
-// LoadData - загружает данные из базы данных в storage.
-func LoadData() {
+// LoadDataToStorage - загружает данные из базы данных в storage.
+func LoadDataToStorage() (err error) {
 	if !IsConnected() {
-		log.Error().Msg("loadDataFromDB(). No connection to DB")
-		return
+		err = errors.New("LoadDataToStorage(). No connection to DB")
+		log.Error().Err(err).Msg("LoadDataToStorage(). Cannot load data from DB")
+		return err
 	}
 	data, err := GetData()
 	if err != nil {
 		log.Warn().Err(err).Msg("loadDataFromDB(). Cannot get data from DB")
+		return err
 	}
 	storage.LoadData(data)
 	log.Info().Msgf("%d Records loaded from database", len(data))
+	return nil
 }

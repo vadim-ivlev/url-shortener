@@ -18,19 +18,20 @@ import (
 // originalURL - оригинальный URL.
 // Возвращает:
 // shortURL - короткий URL
-// added -  флаг, добавлен ли новый короткий URL в БД или файловое хранилище.
-func generateAndSaveShortURL(originalURL string) (shortURL string, added bool) {
+// aNewOne -  флаг, новый ли это короткий URL. Если true, то это новый короткий URL.
+// err - ошибка.
+func generateAndSaveShortURL(originalURL string) (shortURL string, aNewOne bool, err error) {
 	// Сгенерировать короткий id
 	shortID := shortener.Shorten(originalURL)
 	// Cохранить короткий id в хранилище в RAM
-	savedID, added := storage.Set(shortID, originalURL)
+	savedID, aNewOne := storage.Set(shortID, originalURL)
 
-	// Если это новый savedID, то есть added == true,
+	// Если это новый savedID, то есть aNewOne == true,
 	// то сохранить savedID и оригинальный URL в базу данных и/или в файловое хранилище
-	if added {
-		app.AddToStore(savedID, originalURL)
+	if aNewOne {
+		err = app.AddToStore(savedID, originalURL)
 	}
-	return app.ShortURL(shortID), added
+	return app.ShortURL(savedID), aNewOne, err
 }
 
 // ShortenURLHandler обрабатывает POST-запросы для создания короткого URL.
@@ -47,12 +48,16 @@ func ShortenURLHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Сгенерировать короткий id и сохранить его
-	shortURL, added := generateAndSaveShortURL(originalURL)
+	shortURL, aNewOne, err := generateAndSaveShortURL(originalURL)
+	if err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
 
 	// Определить статус ответа
 	status := http.StatusCreated
 	// Если короткий URL уже существует, то вернуть статус 409
-	if !added {
+	if !aNewOne {
 		status = http.StatusConflict
 	}
 
@@ -87,7 +92,7 @@ func PingHandler(w http.ResponseWriter, r *http.Request) {
 	if db.IsConnected() {
 		w.WriteHeader(http.StatusOK)
 	} else {
-		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, "No connection do database", http.StatusInternalServerError)
 	}
 }
 
@@ -145,7 +150,13 @@ func APIShortenHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Сгенерировать короткий id и сохранить его
-	shortURL, added := generateAndSaveShortURL(originalURL)
+	shortURL, aNewOne, err := generateAndSaveShortURL(originalURL)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"error":"` + strings.ReplaceAll(err.Error(), `"`, ` `) + `"}`))
+		return
+	}
 
 	resp := struct {
 		Result string `json:"result"`
@@ -162,7 +173,7 @@ func APIShortenHandler(w http.ResponseWriter, r *http.Request) {
 	// Определить статус ответа
 	status := http.StatusCreated
 	// Если короткий URL уже существует, то вернуть статус 409
-	if !added {
+	if !aNewOne {
 		status = http.StatusConflict
 	}
 
@@ -268,7 +279,14 @@ func APIShortenBatchHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		// Сгенерировать короткий id и сохранить его в хранилище и в БД
-		shortURL, _ := generateAndSaveShortURL(originalURL)
+		shortURL, _, err := generateAndSaveShortURL(originalURL)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Header().Set("Content-Type", "application/json")
+			w.Write([]byte(`{"error":"` + strings.ReplaceAll(err.Error(), `"`, ` `) + `"}`))
+			return
+		}
+
 		outputRecords = append(outputRecords, outRec{CorrelationID: r.CorrelationID, ShortURL: shortURL})
 	}
 

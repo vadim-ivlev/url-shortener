@@ -209,7 +209,7 @@ func TestPingHandler(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, rec.Code)
 
 	// подключенная БД
-	db.Connect(3)
+	db.TryToConnect(3)
 	rec = httptest.NewRecorder()
 	PingHandler(rec, req)
 	assert.Equal(t, http.StatusOK, rec.Code)

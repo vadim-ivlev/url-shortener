@@ -19,9 +19,9 @@ func CreatePool() (err error) {
 	return err
 }
 
-// Connect - Ожидает соединения с базой данных повторяя попытки в случае неудачи.
+// TryToConnect - Пытается соединиться с базой данных повторяя попытки в случае неудачи.
 // numAttempts - количество попыток
-func Connect(numAttempts int) (err error) {
+func TryToConnect(numAttempts int) (err error) {
 	err = errors.New("no attempts to connect to DB")
 	for i := 1; i <= numAttempts; i++ {
 		err = CreatePool()

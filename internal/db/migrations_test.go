@@ -13,7 +13,7 @@ func TestMigrateUp(t *testing.T) {
 	// skipCI skips tests in CI environment
 	skipCI(t)
 
-	Connect(1)
+	TryToConnect(1)
 
 	type args struct {
 		dirname string

@@ -30,13 +30,16 @@ func InitApp() {
 	// Создать хранилище в памяти
 	storage.Create()
 
-	// Подключиться к базе данных
-	db.Connect(1)
+	// Подключиться к базе данных с 1-й попытки
+	db.TryToConnect(1)
 	// Выполнить миграции базы данных
 	db.MigrateUp("./migrations")
 
 	// Загрузить данные из базы данных или из файлового хранилища в storage
-	LoadDataToStorage()
+	err := LoadDataToStorage()
+	if err != nil {
+		log.Warn().Err(err).Msg("Cannot load data to storage")
+	}
 	// Печать содержимого хранилища в лог
 	storage.PrintContent(0)
 }
@@ -51,40 +54,44 @@ func ShortID(shortURL string) string {
 	return strings.TrimPrefix(shortURL, config.Params.BaseURL+"/")
 }
 
-// LoadDataToStorage - загружает данные из базы данных и/или из файлового хранилища в storage.
+// LoadDataToStorage - загружает данные из базы данных или из файлового хранилища в storage.
 // Если указана DatabaseDSN в конфигурации, то загрузить данные из базы данных.
 // В противном случае, если указан FileStoragePath в конфигурации, то загрузить данные из файлового хранилища.
 // Если ни один из параметров не указан, то ничего не загружать.
-func LoadDataToStorage() {
+func LoadDataToStorage() (err error) {
 	switch {
 	case config.Params.DatabaseDSN != "":
-		db.LoadData()
+		err = db.LoadDataToStorage()
 	case config.Params.FileStoragePath != "":
-		filestorage.LoadData()
+		err = filestorage.LoadDataToStorage()
 	default:
 		log.Info().Msg("LoadData(). No persistent data store specified")
 	}
+	return err
 }
 
 // AddToStore сохраняет короткий и оригинальный URL в базу данных или в файловое хранилище.
 // Если указана DatabaseDSN в конфигурации, то сохранять данные в базу данных.
 // В противном случае, если указан FileStoragePath в конфигурации, то сохранять данные в файловое хранилище.
 // Если ни один из параметров не указан, то ничего не сохранять.
-func AddToStore(shortID, originalURL string) {
+func AddToStore(shortID, originalURL string) (err error) {
 	switch {
 	case config.Params.DatabaseDSN != "":
 		// сохранить shortID и оригинальный URL в базу данных
-		err := db.Store(shortID, originalURL)
+		err = db.Store(shortID, originalURL)
 		if err != nil {
 			log.Warn().Err(err).Msg("Cannot save shortID in the database")
+			return err
 		}
 	case config.Params.FileStoragePath != "":
 		// сохранить shortID и оригинальный URL в файловое хранилище
 		err := filestorage.Store(ShortURL(shortID), originalURL)
 		if err != nil {
 			log.Warn().Err(err).Msg("Cannot save shortened url in the filestorage")
+			return err
 		}
 	default:
 		log.Info().Msg("AddToStore(). No persistent data store specified")
 	}
+	return nil
 }

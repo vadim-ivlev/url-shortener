@@ -11,14 +11,14 @@ import (
 	"github.com/vadim-ivlev/url-shortener/internal/storage"
 )
 
-// LoadData - загружает данные из файлового хранилища в storage.
-// Возвращает срез записей и ошибку.
-func LoadData() ([]fileStorageRecord, error) {
+// LoadDataToStorage - загружает данные из файлового хранилища в storage.
+// Возвращает ошибку.
+func LoadDataToStorage() (err error) {
 	// Открываем файл для чтения
 	file, err := os.OpenFile(config.Params.FileStoragePath, os.O_RDONLY|os.O_CREATE, 0644)
 	if err != nil {
 		log.Warn().Err(err).Msg("Filestorage not found. Probably this is the first launch.")
-		return nil, err
+		return err
 	}
 	defer file.Close()
 
@@ -39,5 +39,5 @@ func LoadData() ([]fileStorageRecord, error) {
 	}
 
 	log.Info().Msgf("%d Records loaded from filestorage", len(records))
-	return records, nil
+	return nil
 }

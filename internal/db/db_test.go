@@ -68,7 +68,7 @@ func TestConnectToDatabase(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := Connect(tt.args.numAttempts); (err != nil) != tt.wantErr {
+			if err := TryToConnect(tt.args.numAttempts); (err != nil) != tt.wantErr {
 				t.Errorf("ConnectToDatabase() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
