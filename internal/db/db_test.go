@@ -19,7 +19,9 @@ func skipCI(t *testing.T) {
 
 func TestMain(m *testing.M) {
 	os.Chdir("../../")
+	os.Setenv("DATABASE_DSN", "postgres://postgres:postgres@localhost:5432/praktikum?sslmode=disable")
 	config.ParseCommandLine()
+	config.ParseEnv()
 	os.Exit(m.Run())
 }
 

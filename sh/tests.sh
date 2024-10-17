@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Emulate CI environment 
+# export CI="home"
+
 echo "Удаляем файл хранилища *******************************"
 rm -rf ./data
 

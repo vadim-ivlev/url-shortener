@@ -200,6 +200,9 @@ func getID(url string) (id string) {
 func TestPingHandler(t *testing.T) {
 	skipCI(t)
 
+	os.Setenv("DATABASE_DSN", "postgres://postgres:postgres@localhost:5432/praktikum?sslmode=disable")
+	config.ParseEnv()
+
 	req := httptest.NewRequest(http.MethodGet, "/ping", nil)
 
 	// отключенная БД
@@ -256,6 +259,25 @@ APIShortenBatchHandler принимает в теле запроса множе�
 */
 func TestAPIShortenBatchHandler(t *testing.T) {
 	skipCI(t)
+
+	// Подсоединяемся к базе данных
+	os.Setenv("DATABASE_DSN", "postgres://postgres:postgres@localhost:5432/praktikum?sslmode=disable")
+	config.ParseEnv()
+	err := db.CreatePool()
+	if err != nil {
+		log.Error().Err(err).Msg("Error")
+		return
+	}
+
+	// Очистим базу данных
+	err = db.Clear()
+	if err != nil {
+		log.Error().Err(err).Msg("Error")
+		return
+	}
+
+	// Очистим сторадж
+	storage.Clear()
 
 	// Тестовые входные данные
 	var emptyInput []inpRec = nil
@@ -365,7 +387,7 @@ func TestAPIShortenBatchHandler(t *testing.T) {
 				assert.Equal(t, inputRecord.CorrelationID, outputRecords[i].CorrelationID)
 			}
 
-			// Проверка наличиея записей в БД
+			// Проверка наличия записей в БД
 			dbData, err := db.GetData()
 			if err != nil {
 				log.Error().Err(err).Msg("Error")

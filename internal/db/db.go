@@ -61,3 +61,12 @@ func Store(shortID, originalURL string) error {
 	_, err := DB.Exec("INSERT INTO urls (short_id, original_url) VALUES ($1, $2)", shortID, originalURL)
 	return err
 }
+
+// Clear - очищает таблицу urls
+func Clear() error {
+	if !IsConnected() {
+		return errors.New("Clear. No connection to DB")
+	}
+	_, err := DB.Exec("DELETE FROM urls")
+	return err
+}
