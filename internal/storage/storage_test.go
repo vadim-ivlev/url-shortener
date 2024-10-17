@@ -74,7 +74,30 @@ func TestGet(t *testing.T) {
 
 			gotValue := Get(tt.want)
 			assert.Equal(t, tt.args.value, gotValue)
-			// fmt.Printf("Name = %v, PassedKey = %v, Wanted Value = %v, GotValue = %v\n", tt.name, tt.want, tt.args.value, gotValue)
 		})
+	}
+}
+
+func TestGetData(t *testing.T) {
+	Clear()
+
+	// Add test data
+	urls := map[string]string{
+		"google":  "https://www.google.com",
+		"youtube": "https://www.youtube.com",
+		"yandex":  "https://www.yandex.ru",
+	}
+	// Add URLs
+	for shortID, url := range urls {
+		Set(shortID, url)
+	}
+
+	// Get data
+	data := GetData()
+
+	// Check if all URLs are in the data
+	for shortID, url := range urls {
+		dataURL := data[shortID]
+		assert.Equal(t, url, dataURL)
 	}
 }

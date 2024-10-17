@@ -8,3 +8,13 @@ User-Agent: go-resty/2.7.0 (https://github.com/go-resty/resty)
 {
   "url": "https://www.google.com"
 }
+
+###
+POST /api/shorten/batch HTTP/1.1
+Host: localhost:8080
+Accept: application/json
+Content-Type: application/json
+User-Agent: go-resty/2.7.0 (https://github.com/go-resty/resty)
+
+[{"correlation_id":"cf358acb-773d-4daa-a8fe-c84736f2fe62","original_url":"http://udwgh3nry.yandex/pswx1xbpyir"},{"correlation_id":"70454eea-391d-4ea4-a14c-57b59e8d4ecf","original_url":"http://dtaicrdtu.ru/cjoxoajkmtfcdl"}]
+

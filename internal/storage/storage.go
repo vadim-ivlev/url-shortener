@@ -10,6 +10,12 @@ import (
 // dm —  экземпляр DoubleMap.
 var dm *DoubleMap
 
+type UrlsRec struct {
+	ShortID     string
+	OriginalURL string
+	UserID      string
+}
+
 // DoubleMap - двухсторонняя карта для хранения отображения между оригинальными значениями и их укороченными ключами.
 // valueToKey — это карта для хранения отображения от оригинальных значений к их укороченным ключам.
 // keyToValue — это карта для хранения отображения от укороченных ключей к их оригинальным значениям.
@@ -31,15 +37,24 @@ func Create() {
 		valueToKey: make(map[string]string),
 		keyToValue: make(map[string]string),
 	}
-	log.Info().Msg("storage package initialized")
+	log.Info().Msg("storage initialized")
+}
+
+// Clear очищает хранилище.
+func Clear() {
+	dm = &DoubleMap{
+		valueToKey: make(map[string]string),
+		keyToValue: make(map[string]string),
+	}
+	log.Info().Msg("storage cleared")
 }
 
 // Set сохраняет ключ и значени в DoubleMap.
 // Сначала проверяется, существует ли значение уже в карте valueToKey. Если да, то возвращается существующий ключ.
 // Если значение не существует, оно сохраняется с новым ключом и возвращается новый ключ.
 // Новые отображения добавляются в обе карты.
-// Возвращает ключ и флаг, указывающий, было ли значение добавлено в карту.
-func Set(key, value string) (string, bool) {
+// Возвращает ключ и флаг, указывающий, было ли новое значение добавлено в карту.
+func Set(key, value string) (savedKey string, newKeyAdded bool) {
 	dm.mutex.Lock()
 	defer dm.mutex.Unlock()
 
@@ -55,6 +70,13 @@ func Set(key, value string) (string, bool) {
 	return key, true
 }
 
+// LoadData - загружает данные из map[string]string, где ключ - short_id, значение - original_url, в storage.
+func LoadData(data map[string]string) {
+	for shortID, originalURL := range data {
+		Set(shortID, originalURL)
+	}
+}
+
 // Get возвращает значение для данного ключа.
 // Если ключ не найден, возвращается пустая строка.
 func Get(key string) (value string) {
@@ -66,12 +88,29 @@ func Get(key string) (value string) {
 	return value
 }
 
-func PrintKeyValue() {
-	fmt.Println("Storage: # key value >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-	n := 1
+// PrintContent выводит содержимое хранилища в консоль.
+// limit - количество элементов, которые будут выведены.
+func PrintContent(limit int) {
+	log.Info().Msgf("RAM Storage contains %d records", len(dm.keyToValue))
+	n := 0
 	for k, v := range dm.keyToValue {
-		fmt.Printf("%4v %v %v\n", n, k, v)
 		n++
+		if n > limit {
+			break
+		}
+		fmt.Printf("%4v %v %v\n", n, k, v)
 	}
-	fmt.Println("Storage: <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
+}
+
+// GetData - возвращает данные  в виде map[string]string,
+// где ключ - short_id, значение - original_url.
+func GetData() (data map[string]string) {
+	dm.mutex.Lock()
+	defer dm.mutex.Unlock()
+
+	data = make(map[string]string)
+	for k, v := range dm.keyToValue {
+		data[k] = v
+	}
+	return
 }
