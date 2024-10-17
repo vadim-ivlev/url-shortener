@@ -44,10 +44,13 @@ func (r *loggingResponseWriter) WriteHeader(statusCode int) {
 	r.status = statusCode
 }
 
+// NoColor — флаг для отключения цветного лога
+var NoColor bool = false
+
 // инициализируем логгер
 func InitializeLogger() {
 	// цветной лог в консоль
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, NoColor: NoColor})
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	log.Info().Msg("Logger initialized")
 }
@@ -57,8 +60,6 @@ func InitializeLogger() {
 // - Сведения об ответах должны содержать код статуса и размер содержимого ответа.
 func RequestLogger(h http.Handler) http.Handler {
 	logFn := func(w http.ResponseWriter, r *http.Request) {
-		// TODO:
-		// w.Header().Set("Content-Type", "application/json")
 		// встраиваем оригинальный http.ResponseWriter в loggingResponseWriter
 		logRespWriter := loggingResponseWriter{ResponseWriter: w}
 
