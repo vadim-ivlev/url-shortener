@@ -21,15 +21,6 @@ type config struct {
 // Params - переменная для хранения параметров приложения
 var Params config = config{}
 
-// // getDefaultDatabaseDSN - возвращает DSN для подключения к базе данных  в зависимости от окружения (CI или локальное).
-// // Заплатка для прохождения 9 го автотеста в CI.
-// func getDefaultDatabaseDSN() string {
-// 	if os.Getenv("CI") == "" {
-// 		return "postgres://postgres:postgres@localhost:5432/praktikum?sslmode=disable"
-// 	}
-// 	return ""
-// }
-
 // ParseCommandLine - читает параметры командной строки с значениями по умолчанию
 func ParseCommandLine() {
 	flag.StringVar(&Params.ServerAddress, "a", "localhost:8080", "HTTP server address")
