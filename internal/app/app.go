@@ -5,6 +5,7 @@
 package app
 
 import (
+	"context"
 	"strings"
 
 	"github.com/rs/zerolog/log"
@@ -36,7 +37,7 @@ func InitApp() {
 	db.MigrateUp("./migrations")
 
 	// Загрузить данные из базы данных или из файлового хранилища в storage
-	err := LoadDataToStorage()
+	err := LoadDataToStorage(context.Background())
 	if err != nil {
 		log.Warn().Err(err).Msg("Cannot load data to storage")
 	}
@@ -58,10 +59,13 @@ func ShortID(shortURL string) string {
 // Если указана DatabaseDSN в конфигурации, то загрузить данные из базы данных.
 // В противном случае, если указан FileStoragePath в конфигурации, то загрузить данные из файлового хранилища.
 // Если ни один из параметров не указан, то ничего не загружать.
-func LoadDataToStorage() (err error) {
+// Параметры:
+// - ctx - контекст
+// Возвращает ошибку, если загрузка данных не удалась.
+func LoadDataToStorage(ctx context.Context) (err error) {
 	switch {
 	case config.Params.DatabaseDSN != "":
-		err = db.LoadDataToStorage()
+		err = db.LoadDataToStorage(ctx)
 	case config.Params.FileStoragePath != "":
 		err = filestorage.LoadDataToStorage()
 	default:
@@ -74,11 +78,16 @@ func LoadDataToStorage() (err error) {
 // Если указана DatabaseDSN в конфигурации, то сохранять данные в базу данных.
 // В противном случае, если указан FileStoragePath в конфигурации, то сохранять данные в файловое хранилище.
 // Если ни один из параметров не указан, то ничего не сохранять.
-func AddToStore(shortID, originalURL string) (err error) {
+// Параметры:
+// - ctx - контекст
+// - shortID - короткий ID
+// - originalURL - оригинальный URL
+// Возвращает ошибку, если сохранение не удалось.
+func AddToStore(ctx context.Context, shortID, originalURL string) (err error) {
 	switch {
 	case config.Params.DatabaseDSN != "":
 		// сохранить shortID и оригинальный URL в базу данных
-		err = db.Store(shortID, originalURL)
+		err = db.Store(ctx, shortID, originalURL)
 		if err != nil {
 			log.Warn().Err(err).Msg("Cannot save shortID in the database")
 			return err

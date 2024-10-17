@@ -270,7 +270,7 @@ func TestAPIShortenBatchHandler(t *testing.T) {
 	}
 
 	// Очистим базу данных
-	err = db.Clear()
+	err = db.Clear(context.Background())
 	if err != nil {
 		log.Error().Err(err).Msg("Error")
 		return
@@ -388,7 +388,7 @@ func TestAPIShortenBatchHandler(t *testing.T) {
 			}
 
 			// Проверка наличия записей в БД
-			dbData, err := db.GetData()
+			dbData, err := db.GetData(context.Background())
 			if err != nil {
 				log.Error().Err(err).Msg("Error")
 				return

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"strings"
@@ -15,12 +16,14 @@ import (
 )
 
 // generateAndSaveShortURL - генерирует короткий URL и сохраняет его в хранилище.
+// Параметры:
+// ctx - контекст
 // originalURL - оригинальный URL.
 // Возвращает:
 // shortURL - короткий URL
 // aNewOne -  флаг, новый ли это короткий URL. Если true, то это новый короткий URL.
 // err - ошибка.
-func generateAndSaveShortURL(originalURL string) (shortURL string, aNewOne bool, err error) {
+func generateAndSaveShortURL(ctx context.Context, originalURL string) (shortURL string, aNewOne bool, err error) {
 	// Сгенерировать короткий id
 	shortID := shortener.Shorten(originalURL)
 	// Cохранить короткий id в хранилище в RAM
@@ -29,13 +32,15 @@ func generateAndSaveShortURL(originalURL string) (shortURL string, aNewOne bool,
 	// Если это новый savedID, то есть aNewOne == true,
 	// то сохранить savedID и оригинальный URL в базу данных и/или в файловое хранилище
 	if aNewOne {
-		err = app.AddToStore(savedID, originalURL)
+		err = app.AddToStore(ctx, savedID, originalURL)
 	}
 	return app.ShortURL(savedID), aNewOne, err
 }
 
 // ShortenURLHandler обрабатывает POST-запросы для создания короткого URL.
 func ShortenURLHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -48,7 +53,7 @@ func ShortenURLHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Сгенерировать короткий id и сохранить его
-	shortURL, aNewOne, err := generateAndSaveShortURL(originalURL)
+	shortURL, aNewOne, err := generateAndSaveShortURL(ctx, originalURL)
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
@@ -122,6 +127,8 @@ APIShortenHandler - обрабатывает POST-запросы для созд
 	}
 */
 func APIShortenHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -150,7 +157,7 @@ func APIShortenHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Сгенерировать короткий id и сохранить его
-	shortURL, aNewOne, err := generateAndSaveShortURL(originalURL)
+	shortURL, aNewOne, err := generateAndSaveShortURL(ctx, originalURL)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Header().Set("Content-Type", "application/json")
@@ -236,6 +243,8 @@ APIShortenBatchHandler - принимает в теле запроса множ�
 - необходимо избегать формирования условий для возникновения состояния гонки (race condition).
 */
 func APIShortenBatchHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	// Прочитать тело запроса
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -279,7 +288,7 @@ func APIShortenBatchHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		// Сгенерировать короткий id и сохранить его в хранилище и в БД
-		shortURL, _, err := generateAndSaveShortURL(originalURL)
+		shortURL, _, err := generateAndSaveShortURL(ctx, originalURL)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Header().Set("Content-Type", "application/json")
