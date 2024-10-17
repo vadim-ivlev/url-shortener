@@ -1,6 +1,6 @@
 // Description: Функции для загрузки данных из файлового хранилища в storage.
 
-package filestorage
+package app
 
 import (
 	"encoding/json"
@@ -8,12 +8,13 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
+	"github.com/vadim-ivlev/url-shortener/internal/filestorage"
 	"github.com/vadim-ivlev/url-shortener/internal/storage"
 )
 
-// LoadDataToStorage - загружает данные из файлового хранилища в storage.
+// LoadFileDataToStorage - загружает данные из файлового хранилища в storage.
 // Возвращает ошибку.
-func LoadDataToStorage() (err error) {
+func LoadFileDataToStorage() (err error) {
 	// Открываем файл для чтения
 	file, err := os.OpenFile(config.Params.FileStoragePath, os.O_RDONLY|os.O_CREATE, 0644)
 	if err != nil {
@@ -23,10 +24,10 @@ func LoadDataToStorage() (err error) {
 	defer file.Close()
 
 	// Читаем все записи из файла
-	records := make([]fileStorageRecord, 0)
+	records := make([]filestorage.FileStorageRecord, 0)
 	decoder := json.NewDecoder(file)
 	for {
-		var record fileStorageRecord
+		var record filestorage.FileStorageRecord
 		if err := decoder.Decode(&record); err != nil {
 			break
 		}

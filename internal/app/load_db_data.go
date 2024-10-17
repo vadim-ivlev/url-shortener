@@ -1,26 +1,27 @@
 // Description: Функции для загрузки данных из базы данных в storage.
 
-package db
+package app
 
 import (
 	"context"
 	"errors"
 
 	"github.com/rs/zerolog/log"
+	"github.com/vadim-ivlev/url-shortener/internal/db"
 	"github.com/vadim-ivlev/url-shortener/internal/storage"
 )
 
-// LoadDataToStorage - загружает данные из базы данных в storage.
+// LoadDBDataToStorage - загружает данные из базы данных в storage.
 // Параметры:
 // - ctx - контекст
 // Возвращает ошибку, если загрузка данных не удалась.
-func LoadDataToStorage(ctx context.Context) (err error) {
-	if !IsConnected() {
-		err = errors.New("LoadDataToStorage(). No connection to DB")
-		log.Error().Err(err).Msg("LoadDataToStorage(). Cannot load data from DB")
+func LoadDBDataToStorage(ctx context.Context) (err error) {
+	if !db.IsConnected() {
+		err = errors.New("LoadDBDataToStorage(). No connection to DB")
+		log.Error().Err(err).Msg("LoadDBDataToStorage(). Cannot load data from DB")
 		return err
 	}
-	data, err := GetData(ctx)
+	data, err := db.GetData(ctx)
 	if err != nil {
 		log.Warn().Err(err).Msg("loadDataFromDB(). Cannot get data from DB")
 		return err

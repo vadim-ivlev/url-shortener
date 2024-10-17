@@ -65,9 +65,9 @@ func ShortID(shortURL string) string {
 func LoadDataToStorage(ctx context.Context) (err error) {
 	switch {
 	case config.Params.DatabaseDSN != "":
-		err = db.LoadDataToStorage(ctx)
+		err = LoadDBDataToStorage(ctx)
 	case config.Params.FileStoragePath != "":
-		err = filestorage.LoadDataToStorage()
+		err = LoadFileDataToStorage()
 	default:
 		log.Info().Msg("LoadData(). No persistent data store specified")
 	}

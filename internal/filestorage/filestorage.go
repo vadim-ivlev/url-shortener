@@ -17,8 +17,8 @@ import (
 	"github.com/vadim-ivlev/url-shortener/internal/config"
 )
 
-// fileStorageRecord - структура для хранения записи в файловом хранилище.
-type fileStorageRecord struct {
+// FileStorageRecord - структура для хранения записи в файловом хранилище.
+type FileStorageRecord struct {
 	UUID        string `json:"uuid"`
 	ShortURL    string `json:"short_url"`
 	OriginalURL string `json:"original_url"`
@@ -49,7 +49,7 @@ func Store(shortURL, originalURL string) error {
 		return err
 	}
 	// Создаем новую запись
-	record := fileStorageRecord{
+	record := FileStorageRecord{
 		UUID:        uuid.String(),
 		ShortURL:    shortURL,
 		OriginalURL: originalURL,
