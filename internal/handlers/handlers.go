@@ -339,20 +339,22 @@ APIUserURLsHandler - возвращает пользователю все ког
 - При отсутствии сокращённых пользователем URL хендлер должен отдавать HTTP-статус `204 No Content`.
 */
 func APIUserURLsHandler(w http.ResponseWriter, r *http.Request) {
-	// Получить ID пользователя из контекста запроса
+	// TODO: Получить ID пользователя из контекста запроса
+	userIDInt := r.Context().Value("userID")
+	log.Warn().Msgf("APIUserURLsHandler>  Got User ID Interface '%v' ", userIDInt)
 	userID, ok := r.Context().Value("userID").(string)
 	if !ok {
 		log.Error().Msg("APIUserURLsHandler> User ID not found in context")
 	}
 	log.Info().Msgf("APIUserURLsHandler>  Got User ID '%v' ", userID)
 
-	// Проверить, что ID пользователя не пустой
-	if userID == "" {
-		w.WriteHeader(http.StatusUnauthorized)
-		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"error":"Unauthorized: No user ID"}`))
-		return
-	}
+	// // TODO: Проверить, что ID пользователя не пустой
+	// if userID == "" {
+	// 	w.WriteHeader(http.StatusUnauthorized)
+	// 	w.Header().Set("Content-Type", "application/json")
+	// 	w.Write([]byte(`{"error":"Unauthorized: No user ID"}`))
+	// 	return
+	// }
 
 	// Получить все короткие URL пользователя
 	urls := app.GetUserURLs(userID)

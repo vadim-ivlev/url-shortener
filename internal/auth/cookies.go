@@ -11,7 +11,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// contextKey - тип для ключа контекста
+// TODO: contextKey - тип для ключа контекста
 type contextKey string
 
 // AuthMiddleware - middleware для аутентификации пользователя
@@ -44,7 +44,13 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			// return
 
 			// Продолжаем обработку запроса
-			next.ServeHTTP(w, r)
+
+			// TODO: Можно добавить ID пользователя в контекст запроса, если необходимо
+			ctx := context.WithValue(r.Context(), "userID", newID)
+			log.Info().Msgf("AuthMiddleware> New User ID '%v' is authenticated and added to request context", newID)
+			next.ServeHTTP(w, r.WithContext(ctx))
+
+			// next.ServeHTTP(w, r)
 			return
 		}
 
@@ -66,11 +72,11 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			newID := Params.UserID //uuid.New().String()
 			signedCookie := signCookie(newID)
 			http.SetCookie(w, &http.Cookie{
-				Name:     cookieName,
-				Value:    signedCookie,
-				Path:     "/",
-				HttpOnly: true,
-				Secure:   true,
+				Name:  cookieName,
+				Value: signedCookie,
+				Path:  "/",
+				// HttpOnly: true,
+				// Secure:   true,
 			})
 			// Продолжаем обработку запроса
 			next.ServeHTTP(w, r)
@@ -84,8 +90,8 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// Можно добавить ID пользователя в контекст запроса, если необходимо
-		ctx := context.WithValue(r.Context(), contextKey("userID"), userID)
+		// TODO:Можно добавить ID пользователя в контекст запроса, если необходимо
+		ctx := context.WithValue(r.Context(), "userID", userID)
 		log.Info().Msgf("AuthMiddleware> User ID '%v' is authenticated and added to request context", userID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 
