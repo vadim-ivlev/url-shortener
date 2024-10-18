@@ -11,6 +11,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog/log"
 	"github.com/vadim-ivlev/url-shortener/internal/app"
+	"github.com/vadim-ivlev/url-shortener/internal/auth"
 	"github.com/vadim-ivlev/url-shortener/internal/db"
 	"github.com/vadim-ivlev/url-shortener/internal/shortener"
 	"github.com/vadim-ivlev/url-shortener/internal/storage"
@@ -41,6 +42,8 @@ func generateAndSaveShortURL(ctx context.Context, originalURL string) (shortURL 
 // ShortenURLHandler обрабатывает POST-запросы для создания короткого URL.
 func ShortenURLHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	userID := GetUserIDFromContext(ctx)
+	log.Info().Msgf("ShortenURLHandler> User ID '%v' ", userID)
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -54,7 +57,7 @@ func ShortenURLHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Сгенерировать короткий id и сохранить его
-	shortURL, aNewOne, err := generateAndSaveShortURL(ctx, originalURL)
+	shortURL, aNewOne, err := generateAndSaveShortURL(ctx, app.JoinUserAndURL(userID, originalURL))
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
@@ -82,14 +85,21 @@ func RedirectHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Получить userID из контекста
+	userID := GetUserIDFromContext(r.Context())
+	log.Info().Msgf("RedirectHandler> User ID from context = '%v' ", userID)
+
 	// Получить оригинальный URL по id и перенаправить
-	originalURL := storage.Get(id)
-	if originalURL == "" {
+	storedValue := storage.Get(id)
+	if storedValue == "" {
 		http.Error(w, "URL not found", http.StatusBadRequest)
 		return
 	}
+	log.Info().Msgf("RedirectHandler> storedValue = '%v'", storedValue)
+	storedUserID, storedURL := app.SplitUserAndURL(storedValue)
+	log.Info().Msgf("RedirectHandler> storedUserID = '%v', storedURL = '%v'", storedUserID, storedURL)
 
-	http.Redirect(w, r, originalURL, http.StatusTemporaryRedirect)
+	http.Redirect(w, r, storedURL, http.StatusTemporaryRedirect)
 }
 
 // PingHandler - при запросе проверяет соединение с базой данных.
@@ -129,6 +139,8 @@ APIShortenHandler - обрабатывает POST-запросы для созд
 */
 func APIShortenHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	userID := GetUserIDFromContext(ctx)
+	log.Info().Msgf("APIShortenHandler> User ID '%v' ", userID)
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -158,7 +170,7 @@ func APIShortenHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Сгенерировать короткий id и сохранить его
-	shortURL, aNewOne, err := generateAndSaveShortURL(ctx, originalURL)
+	shortURL, aNewOne, err := generateAndSaveShortURL(ctx, app.JoinUserAndURL(userID, originalURL))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Header().Set("Content-Type", "application/json")
@@ -245,6 +257,8 @@ APIShortenBatchHandler - принимает в теле запроса множ�
 */
 func APIShortenBatchHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	userID := GetUserIDFromContext(ctx)
+	log.Info().Msgf("APIShortenBatchHandler> User ID '%v' ", userID)
 
 	// Прочитать тело запроса
 	body, err := io.ReadAll(r.Body)
@@ -289,7 +303,7 @@ func APIShortenBatchHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		// Сгенерировать короткий id и сохранить его в хранилище и в БД
-		shortURL, _, err := generateAndSaveShortURL(ctx, originalURL)
+		shortURL, _, err := generateAndSaveShortURL(ctx, app.JoinUserAndURL(userID, originalURL))
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Header().Set("Content-Type", "application/json")
@@ -339,22 +353,17 @@ APIUserURLsHandler - возвращает пользователю все ког
 - При отсутствии сокращённых пользователем URL хендлер должен отдавать HTTP-статус `204 No Content`.
 */
 func APIUserURLsHandler(w http.ResponseWriter, r *http.Request) {
-	// TODO: Получить ID пользователя из контекста запроса
-	userIDInt := r.Context().Value("userID")
-	log.Warn().Msgf("APIUserURLsHandler>  Got User ID Interface '%v' ", userIDInt)
-	userID, ok := r.Context().Value("userID").(string)
-	if !ok {
-		log.Error().Msg("APIUserURLsHandler> User ID not found in context")
-	}
-	log.Info().Msgf("APIUserURLsHandler>  Got User ID '%v' ", userID)
+	userID := GetUserIDFromContext(r.Context())
+	newUserID := GetNewUserIDFromContext(r.Context())
 
-	// // TODO: Проверить, что ID пользователя не пустой
-	// if userID == "" {
-	// 	w.WriteHeader(http.StatusUnauthorized)
-	// 	w.Header().Set("Content-Type", "application/json")
-	// 	w.Write([]byte(`{"error":"Unauthorized: No user ID"}`))
-	// 	return
-	// }
+	// TODO: Проверить, что ID пользователя не пустой, или это новый пользователь с только что сгенерированным ID
+	if userID == "" || newUserID == "new" {
+		log.Error().Msg("APIUserURLsHandler> User ID not found or User ID was generated on the fly")
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"error":"Unauthorized: No user ID"}`))
+		return
+	}
 
 	// Получить все короткие URL пользователя
 	urls := app.GetUserURLs(userID)
@@ -362,21 +371,48 @@ func APIUserURLsHandler(w http.ResponseWriter, r *http.Request) {
 	// Подготовливаем тело ответа
 	respBody, err := json.Marshal(urls)
 	if err != nil {
+		log.Error().Err(err).Msg("APIUserURLsHandler> Marshal error")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(`{"error":"Marshal error"}`))
 		return
 	}
+	log.Info().Msg("---------------------------")
+	log.Info().Msgf("APIUserURLsHandler> Response: %v", string(respBody))
+	log.Info().Msg("---------------------------")
 
 	// Устанавливаем статус ответа в зависимости от наличия записей
 	status := http.StatusOK
 	// Если коротких URL нет, то вернуть статус 204
 	if len(urls) == 0 {
+		log.Warn().Msg("APIUserURLsHandler> No content")
 		status = http.StatusNoContent
+		// status = http.StatusUnauthorized
 	}
 
 	// Отправляем ответ
 	w.WriteHeader(status)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(respBody)
+}
+
+// GetUserIDFromContext - получает ID пользователя из контекста.
+func GetUserIDFromContext(ctx context.Context) (userID string) {
+	userID, ok := ctx.Value(auth.UserIDKey).(string)
+	if !ok {
+		log.Error().Msg("GetUserIDFromContext> User ID not found in context")
+	}
+	// log.Info().Msgf("GetUserIDFromContext> User ID '%v' ", userID)
+	return userID
+}
+
+// GetNewUserIDFromContext - получает новый ли это (сгенерированный налету) ID пользователя из контекста.
+// Если это новый ID, то возвращает "new".
+func GetNewUserIDFromContext(ctx context.Context) (newUserID string) {
+	newUserID, ok := ctx.Value(auth.NewUserIDKey).(string)
+	if !ok {
+		log.Error().Msg("GetNewUserIDFromContext> New User ID not found in context")
+	}
+	log.Info().Msgf("GetNewUserIDFromContext> New User ID flag '%v' ", newUserID)
+	return newUserID
 }

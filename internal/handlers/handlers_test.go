@@ -14,9 +14,11 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/vadim-ivlev/url-shortener/internal/app"
+	"github.com/vadim-ivlev/url-shortener/internal/auth"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
 	"github.com/vadim-ivlev/url-shortener/internal/db"
 	"github.com/vadim-ivlev/url-shortener/internal/logger"
+	"github.com/vadim-ivlev/url-shortener/internal/shortener"
 	"github.com/vadim-ivlev/url-shortener/internal/storage"
 )
 
@@ -35,6 +37,7 @@ func TestMain(m *testing.M) {
 	app.InitApp()
 
 	InitTestTable()
+	CorrectShortURLs("")
 	os.Exit(m.Run())
 }
 
@@ -95,6 +98,20 @@ func InitTestTable() {
 				contentType:    "text/plain",
 			},
 		},
+	}
+}
+
+// CorrectShortURLs корректирует короткие URL в тестовой таблице
+// в соответствии с userID
+func CorrectShortURLs(userID string) {
+	// Correct the shortURLs in the test table
+	for i, tt := range tests {
+		if tt.url == "" {
+			continue
+		}
+		userAndURL := app.JoinUserAndURL(userID, tt.url)
+		shortID := shortener.Shorten(userAndURL)
+		tests[i].want.shortURL = config.Params.BaseURL + "/" + shortID
 	}
 }
 
@@ -417,28 +434,28 @@ func TestAPIUserURLsHandler(t *testing.T) {
 	skipCI(t)
 
 	// Типы тестовых аргументов и ожидаемых результатов
-	type args struct {
+	type argsU struct {
 		inputRecords map[string]string
 	}
 
-	type want struct {
+	type wantU struct {
 		status      int
 		contentType string
 		numRecords  int
 	}
 
 	// Тестовые случаи
-	tests := []struct {
+	testsU := []struct {
 		name string
-		args args
-		want want
+		args argsU
+		want wantU
 	}{
 		{
 			name: "Null",
-			args: args{
+			args: argsU{
 				inputRecords: nil,
 			},
-			want: want{
+			want: wantU{
 				status:      http.StatusNoContent,
 				contentType: "application/json",
 				numRecords:  0,
@@ -446,10 +463,10 @@ func TestAPIUserURLsHandler(t *testing.T) {
 		},
 		{
 			name: "Empty",
-			args: args{
+			args: argsU{
 				inputRecords: map[string]string{},
 			},
-			want: want{
+			want: wantU{
 				status:      http.StatusNoContent,
 				contentType: "application/json",
 				numRecords:  0,
@@ -457,13 +474,13 @@ func TestAPIUserURLsHandler(t *testing.T) {
 		},
 		{
 			name: "Normal",
-			args: args{
+			args: argsU{
 				inputRecords: map[string]string{
 					"0": "https://www.google.com",
 					"1": "https://www.youtube.com",
 				},
 			},
-			want: want{
+			want: wantU{
 				status:      http.StatusOK,
 				contentType: "application/json",
 				numRecords:  2,
@@ -471,19 +488,24 @@ func TestAPIUserURLsHandler(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
+	userID := "user1"
+	for _, tt := range testsU {
 		t.Run(tt.name, func(t *testing.T) {
 			// Очистить хранилище
 			storage.Clear()
 
 			// Добавить записи в хранилище
 			for shortID, originalURL := range tt.args.inputRecords {
-				storage.Set(shortID, originalURL)
+				userAndURL := app.JoinUserAndURL(userID, originalURL)
+				storage.Set(shortID, userAndURL)
 			}
 
 			req := httptest.NewRequest(http.MethodGet, "/api/user/urls", nil)
+			// Добавить userID в контекст запроса с меткой "old"
+			ctx := auth.AddUserIDToContext(req.Context(), userID, "old")
 			rec := httptest.NewRecorder()
-			APIUserURLsHandler(rec, req)
+			// Вызов обработчика
+			APIUserURLsHandler(rec, req.WithContext(ctx))
 
 			// Проверка статуса ответа
 			status := rec.Code

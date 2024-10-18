@@ -8,95 +8,50 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
+	"github.com/vadim-ivlev/url-shortener/internal/shortener"
 )
 
-// TODO: contextKey - тип для ключа контекста
+// contextKey - тип для ключа контекста
 type contextKey string
+
+const UserIDKey contextKey = "userID"
+const NewUserIDKey contextKey = "newUserID"
+
+// GenerateUserID - генерирует и возвращает новый случайный ID пользователя
+func GenerateUserID() string {
+	// return Params.UserID
+	return "us-" + shortener.Shorten(uuid.New().String())
+}
 
 // AuthMiddleware - middleware для аутентификации пользователя
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cookieName := Params.CookieName
-		// Попытка получить куки из запроса
-		cookie, err := r.Cookie(cookieName)
+		// Получить куки из запроса
+		cookie, err := r.Cookie(Params.CookieName)
+		// Если куки отсутствует, создаём новые и добавляем в ответ перед продолжением обработки запроса
 		if err != nil {
-			// Куки отсутствует, создаём новую и добавляем в ответ перед продолжением обработки запроса
-			log.Warn().Msgf("AuthMiddleware> Cookie '%v' not found. Adding a new one to the response", cookieName)
-			newID := Params.UserID //uuid.New().String()
-			log.Info().Msgf("AuthMiddleware> New user ID is '%v' ", newID)
-			signedCookie := signCookie(newID)
-			http.SetCookie(w, &http.Cookie{
-				Name:  cookieName,
-				Value: signedCookie,
-				Path:  "/",
-				// Установите дополнительные параметры безопасности по необходимости
-				// HttpOnly: true,
-				// Secure:   true,
-			})
-
-			// Прерываем обработку запроса и возвращаем ошибку
-			// w.WriteHeader(http.StatusUnauthorized)
-			// w.Header().Set("Content-Type", "application/json")
-			// w.Write([]byte(`{"error":"Unauthorized: No user ID"}`))
-
-			// http.Error(w, "Cookie not found", http.StatusUnauthorized)
-			// return
-
-			// Продолжаем обработку запроса
-
-			// TODO: Можно добавить ID пользователя в контекст запроса, если необходимо
-			ctx := context.WithValue(r.Context(), "userID", newID)
-			log.Info().Msgf("AuthMiddleware> New User ID '%v' is authenticated and added to request context", newID)
+			log.Warn().Msg("AuthMiddleware> Cookie '%v' not found.  Adding New user ID to response and request")
+			ctx := addCookieAndContext(w, r)
 			next.ServeHTTP(w, r.WithContext(ctx))
-
-			// next.ServeHTTP(w, r)
 			return
 		}
 
-		// Разделяем значение куки на ID и подпись
-		parts := strings.Split(cookie.Value, "|")
-		if len(parts) != 2 {
-			http.Error(w, "Invalid cookie format", http.StatusUnauthorized)
-			return
-		}
-		userID := parts[0]
-		signature := parts[1]
+		// Получаем userID и подпись из куки
+		userID, signature := getUserIDAndSignature(cookie.Value)
 
-		// Проверяем подпись
-		log.Info().Msgf("AuthMiddleware> Checking cookie signature for user ID %v", userID)
-		expectedSignature := computeHMAC(userID, []byte(Params.SecretKey))
-		if !hmac.Equal([]byte(signature), []byte(expectedSignature)) {
-			// Подпись неверна, создаём новую куку
-			log.Warn().Msgf("AuthMiddleware> Invalid cookie signature for user ID '%v'. Adding a new cookie '%v' to the response", userID, cookieName)
-			newID := Params.UserID //uuid.New().String()
-			signedCookie := signCookie(newID)
-			http.SetCookie(w, &http.Cookie{
-				Name:  cookieName,
-				Value: signedCookie,
-				Path:  "/",
-				// HttpOnly: true,
-				// Secure:   true,
-			})
-			// Продолжаем обработку запроса
-			next.ServeHTTP(w, r)
+		// Если подпись неверна, создаём новые куки и добавляем в ответ перед продолжением обработки запроса
+		if !signatureValid(userID, signature) {
+			log.Warn().Msgf("AuthMiddleware> Invalid cookie signature for user ID '%v'. Adding a new cookie '%v' to the response and request", userID, Params.CookieName)
+			ctx := addCookieAndContext(w, r)
+			next.ServeHTTP(w, r.WithContext(ctx))
 			return
 		}
 
-		// Проверяем, что ID существует
-		if userID == "" {
-			log.Error().Msg("AuthMiddleware> No user ID in the cookie")
-			http.Error(w, "AuthMiddleware> Unauthorized: No user ID", http.StatusUnauthorized)
-			return
-		}
-
-		// TODO:Можно добавить ID пользователя в контекст запроса, если необходимо
-		ctx := context.WithValue(r.Context(), "userID", userID)
-		log.Info().Msgf("AuthMiddleware> User ID '%v' is authenticated and added to request context", userID)
+		// Добавляем ID пользователя в контекст запроса
+		ctx := AddUserIDToContext(r.Context(), userID, "old")
 		next.ServeHTTP(w, r.WithContext(ctx))
-
-		// Продолжаем обработку запроса
-		// next.ServeHTTP(w, r)
 	})
 }
 
@@ -113,21 +68,80 @@ func computeHMAC(message string, key []byte) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-// // Пример обработчика, защищённого middleware
-// func protectedHandler(w http.ResponseWriter, r *http.Request) {
-// 	// Здесь можно получить userID из контекста, если вы его добавили
-// 	// userID := r.Context().Value("userID").(string)
-// 	w.Write([]byte("Доступ разрешён"))
-// }
+// SetResponseCookie - устанавливает куки в ответе
+// Подписывает значение куки и добавляет в ответ.
+// Параметры:
+//   - w - http.ResponseWriter
+//   - cookieValue - значение куки
+func SetResponseCookie(w http.ResponseWriter, cookieValue string) {
+	signedCookie := signCookie(cookieValue)
+	http.SetCookie(w, &http.Cookie{
+		Name:  Params.CookieName,
+		Value: signedCookie,
+		Path:  "/",
+		// Установите дополнительные параметры безопасности по необходимости
+		// HttpOnly: true,
+		// Secure:   true,
+	})
+	log.Info().Msgf(">>> SetResponseCookie> Setting cookie '%v' with value '%v'", Params.CookieName, signedCookie[:20]+"...")
+}
 
-// func main() {
-// 	mux := http.NewServeMux()
-// 	// Применяем middleware к защищённому маршруту
-// 	mux.Handle("/protected", authMiddleware(http.HandlerFunc(protectedHandler)))
+// AddUserIDToContext - Добавляем ID пользователя, и метку новый ли он в контекст запроса
+// Параметры:
+//   - ctx - контекст
+//   - newUserID - новый ID пользователя
+//   - keyLabel - метка нового ID
+func AddUserIDToContext(ctx context.Context, newUserID, keyLabel string) (newCtx context.Context) {
+	newCtx = context.WithValue(ctx, UserIDKey, newUserID)
+	newCtx = context.WithValue(newCtx, NewUserIDKey, keyLabel)
+	log.Info().Msgf(">>> AddUserIDToContext> New User ID '%v' is added to request context", newUserID)
+	return newCtx
+}
 
-// 	// Запуск сервера
-// 	log.Println("Сервер запущен на :8080")
-// 	if err := http.ListenAndServe(":8080", mux); err != nil {
-// 		log.Fatalf("Ошибка запуска сервера: %v", err)
-// 	}
-// }
+// getUserIDAndSignature - Разделяем значение куки на ID и подпись
+// Параметры:
+//   - cookieValue - значение куки
+//
+// Возвращает:
+//   - userID - ID пользователя
+//   - signature - подпись
+func getUserIDAndSignature(cookieValue string) (userID, signature string) {
+	parts := strings.Split(cookieValue, "|")
+	if len(parts) != 2 {
+		return "", ""
+	}
+	return parts[0], parts[1]
+}
+
+// signatureValid - Проверяет UserID и подпись
+// Параметры:
+//   - userID - ID пользователя
+//   - signature - подпись
+//
+// Возвращает:
+//   - true, если подпись верна
+func signatureValid(userID, signature string) bool {
+	if userID == "" {
+		return false
+	}
+	expectedSignature := computeHMAC(userID, []byte(Params.SecretKey))
+	return hmac.Equal([]byte(signature), []byte(expectedSignature))
+}
+
+// addCookieAndContext - Генерирует новый ID пользователя,
+// устанавливает куки в ответе сервера и добавляет ID пользователя в контекст запроса.
+// Параметры:
+//   - w - http.ResponseWriter
+//   - r - *http.Request
+//
+// Возвращает:
+//   - контекст запроса
+func addCookieAndContext(w http.ResponseWriter, r *http.Request) context.Context {
+	// Генерируем новый ID пользователя
+	newUserID := GenerateUserID()
+	// Устанавливаем куки в ответе сервера
+	SetResponseCookie(w, newUserID)
+	// Добавляем ID пользователя в контекст запроса
+	ctx := AddUserIDToContext(r.Context(), newUserID, "new")
+	return ctx
+}
