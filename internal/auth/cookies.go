@@ -21,7 +21,6 @@ const NewUserIDKey contextKey = "newUserID"
 
 // GenerateUserID - генерирует и возвращает новый случайный ID пользователя
 func GenerateUserID() string {
-	// return Params.UserID
 	return "us-" + shortener.Shorten(uuid.New().String())
 }
 

@@ -42,7 +42,7 @@ func InitApp() {
 		log.Warn().Err(err).Msg("Cannot load data to storage")
 	}
 	// Печать содержимого хранилища в лог
-	storage.PrintContent(5)
+	storage.PrintContent(0)
 }
 
 // Получить короткий URL из shortID
