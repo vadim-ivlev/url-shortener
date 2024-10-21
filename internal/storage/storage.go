@@ -10,6 +10,12 @@ import (
 // dm —  экземпляр DoubleMap.
 var dm *DoubleMap
 
+type UrlsRec struct {
+	ShortID     string
+	OriginalURL string
+	UserID      string
+}
+
 // DoubleMap - двухсторонняя карта для хранения отображения между оригинальными значениями и их укороченными ключами.
 // valueToKey — это карта для хранения отображения от оригинальных значений к их укороченным ключам.
 // keyToValue — это карта для хранения отображения от укороченных ключей к их оригинальным значениям.
@@ -94,4 +100,17 @@ func PrintContent(limit int) {
 		}
 		fmt.Printf("%4v %v %v\n", n, k, v)
 	}
+}
+
+// GetData - возвращает данные  в виде map[string]string,
+// где ключ - short_id, значение - original_url.
+func GetData() (data map[string]string) {
+	dm.mutex.Lock()
+	defer dm.mutex.Unlock()
+
+	data = make(map[string]string)
+	for k, v := range dm.keyToValue {
+		data[k] = v
+	}
+	return
 }
