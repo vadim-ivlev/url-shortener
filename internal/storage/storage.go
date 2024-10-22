@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/rs/zerolog/log"
@@ -113,4 +114,72 @@ func GetData() (data map[string]string) {
 		data[k] = v
 	}
 	return
+}
+
+// Delete - делает пометку ключа как удаленного добавляя префикс "-".
+// Удалить ключ может только пользователь его создавший.
+// Параметры:
+// - userID - идентификатор пользователя
+// - key - ключ
+// Возвращает ошибку
+func Delete(userID, key string) error {
+	// TODO: move down? Блокируем доступ к хранилищу
+	dm.mutex.Lock()
+	defer dm.mutex.Unlock()
+
+	// Получаем текущее значение ключа
+	value, exists := dm.keyToValue[key]
+
+	// Проверяем, существует ли ключ
+	if !exists {
+		return fmt.Errorf("key %s not found", key)
+	}
+
+	// Проверяем, что пользователь удаляет свой ключ
+	if !strings.HasPrefix(value, userID+"@") {
+		return fmt.Errorf("key %s -> %s does not belong to user %s", key, value, userID)
+	}
+
+	// Проверяем, не был ли ключ уже удален
+	if strings.HasPrefix(key, "-") {
+		return fmt.Errorf("key %s already deleted", key)
+	}
+
+	// Помечаем ключ как удаленный
+	dm.keyToValue["-"+key] = value
+	delete(dm.keyToValue, key)
+	return nil
+}
+
+// DeleteKeys - удаляет ключи из хранилища.
+// Параметры:
+// - userID - идентификатор пользователя
+// - keys - массив ключей
+// Возвращает ошибку
+func DeleteKeys(userID string, keys []any) error {
+	for _, key := range keys {
+		k, ok := key.(string)
+		if !ok {
+			return fmt.Errorf("key %v is not a string", key)
+		}
+		err := Delete(userID, k)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// // RemoveKey - удаляет ключ из хранилища.
+// func RemoveKey(key string) {
+// 	dm.mutex.Lock()
+// 	defer dm.mutex.Unlock()
+// 	delete(dm.keyToValue, key)
+// }
+
+// IsDeletedKey - проверяет, является ли ключ удаленным.
+func IsDeletedKey(key string) bool {
+	deletedKey := "-" + key
+	_, exists := dm.keyToValue[deletedKey]
+	return exists
 }

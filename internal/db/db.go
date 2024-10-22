@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -107,4 +108,54 @@ func GetData(ctx context.Context) (data map[string]string, err error) {
 	}
 
 	return data, nil
+}
+
+// generateDollarSigns - генерирует строку вида "$1, $2, $3, ...",
+// для использования в выражении IN запроса к базе данных.
+// Параметры:
+// - n - количество знаков доллара
+// - start - начальное значение после знака доллара
+// Возвращает строку с запятыми и знаками доллара.
+func generateDollarSigns(n int, start int) string {
+	result := "("
+	for i := 0; i < n; i++ {
+		if i == 0 {
+			result += fmt.Sprintf("$%d", start)
+		} else {
+			result += fmt.Sprintf(", $%d", start+i)
+		}
+	}
+	return result + ")"
+}
+
+// DeleteKeys - помечает записи в базе данных как удаленные
+// добавляя префикс "-" к short_id.
+// Параметры:
+// - ctx - контекст
+// - userID - идентификатор пользователя
+// - keys - массив ключей
+// Возвращает ошибку, если удаление не удалось.
+func DeleteKeys(ctx context.Context, userID string, keys []any) error {
+	if !IsConnected() {
+		return errors.New("DeleteKeys. No connection to DB")
+	}
+	// если ключи не переданы, возвращаем успех
+	if keys == nil || len(keys) == 0 {
+		return nil
+	}
+
+	// готовим запрос для обновления записей
+	query := `UPDATE urls 
+	SET short_id = '-' || short_id 
+	WHERE original_url LIKE $1 || '@%' 
+	AND short_id IN ` + generateDollarSigns(len(keys), 2)
+
+	// готовим аргументы для запроса
+	args := make([]any, 0, len(keys))
+	args = append(args, userID)
+	args = append(args, keys...)
+
+	// выполняем запрос
+	_, err := DB.ExecContext(ctx, query, args...)
+	return err
 }

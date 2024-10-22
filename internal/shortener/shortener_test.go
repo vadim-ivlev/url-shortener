@@ -26,6 +26,11 @@ func TestShorten(t *testing.T) {
 			wantKey: "811C9DC5",
 		},
 		{
+			name:    "empty value 2",
+			args:    args{value: ""},
+			wantKey: "811C9DC5",
+		},
+		{
 			name:    "google",
 			args:    args{value: "https://www.google.com"},
 			wantKey: "F870F1E9",

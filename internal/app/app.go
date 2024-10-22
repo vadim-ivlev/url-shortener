@@ -145,3 +145,40 @@ func SplitUserAndURL(userAndURL string) (userID, URL string) {
 	}
 	return parts[0], parts[1]
 }
+
+func DeleteKeysFromStore(ctx context.Context, userID string, keys []any) error {
+	// Пометить keys как удаленные в базе данных
+	if config.Params.DatabaseDSN != "" {
+		err := db.DeleteKeys(ctx, userID, keys)
+		if err != nil {
+			log.Warn().Err(err).Msg("Cannot delete shortID from the database")
+			return err
+		}
+	}
+	// Пометить keys как удаленные в файловом хранилище
+	if config.Params.FileStoragePath != "" {
+		err := DumpDataToFilestorage()
+		if err != nil {
+			log.Warn().Err(err).Msg("Cannot save shortened url in the filestorage")
+			return err
+		}
+	}
+	return nil
+}
+
+// DumpDataToFilestorage - сохраняет данные из RAM в файловое хранилище.
+func DumpDataToFilestorage() error {
+	if config.Params.FileStoragePath == "" {
+		return nil
+	}
+	filestorage.Clear()
+	storageData := storage.GetData()
+	for recordShortID, recordValue := range storageData {
+		err := filestorage.Store(ShortURL(recordShortID), recordValue)
+		if err != nil {
+			log.Warn().Err(err).Msg("Cannot save shortened url in the filestorage")
+			return err
+		}
+	}
+	return nil
+}

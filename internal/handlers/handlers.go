@@ -76,6 +76,7 @@ func ShortenURLHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // RedirectHandler обрабатывает GET-запросы для перенаправления на оригинальный URL.
+// При запросе удалённого URL нужно вернуть статус `410 Gone`.
 func RedirectHandler(w http.ResponseWriter, r *http.Request) {
 
 	// если id пустой, то вернуть ошибку
@@ -92,9 +93,15 @@ func RedirectHandler(w http.ResponseWriter, r *http.Request) {
 	// Получить оригинальный URL по id и перенаправить
 	storedValue := storage.Get(id)
 	if storedValue == "" {
+		// Проверить не удаленный ли это URL
+		if storage.IsDeletedKey(id) {
+			http.Error(w, "URL was deleted", http.StatusGone)
+			return
+		}
 		http.Error(w, "URL not found", http.StatusBadRequest)
 		return
 	}
+
 	log.Info().Msgf("RedirectHandler> storedValue = '%v'", storedValue)
 	storedUserID, storedURL := app.SplitUserAndURL(storedValue)
 	log.Info().Msgf("RedirectHandler> storedUserID = '%v', storedURL = '%v'", storedUserID, storedURL)
@@ -415,4 +422,67 @@ func GetNewUserIDFromContext(ctx context.Context) (newUserID string) {
 	}
 	log.Info().Msgf("GetNewUserIDFromContext> New User ID flag '%v' ", newUserID)
 	return newUserID
+}
+
+// APIDeleteURLsHandler - обрабатывает DELETE-запросы для удаления коротких URL.
+// в теле запроса принимает список идентификаторов сокращённых URL для асинхронного удаления.
+// Запрос может быть таким:
+// ```http
+// DELETE http://localhost:8080/api/user/urls
+// Content-Type: application/json
+//
+// ["6qxTVvsy", "RTfd56hn", "Jlfd67ds"]
+// ```
+//
+// В случае успешного приёма запроса хендлер должен возвращать HTTP-статус `202 Accepted`.
+// Фактический результат удаления может происходить позже.
+// Оповещать пользователя об успешности или неуспешности не нужно.
+func APIDeleteURLsHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	userID := GetUserIDFromContext(ctx)
+	log.Info().Msgf("APIDeleteURLsHandler> User ID '%v' ", userID)
+
+	// Прочитать тело запроса
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"error":"` + strings.ReplaceAll(err.Error(), `"`, ` `) + `"}`))
+		return
+	}
+
+	// Массив идентификаторов для удаления
+	ids := []any{}
+
+	// Распарсить тело запроса в массив идентификаторов
+	err = json.Unmarshal(body, &ids)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		errorText := strings.ReplaceAll(err.Error(), `"`, ` `)
+		json.NewEncoder(w).Encode(map[string]string{"error": errorText})
+		return
+	}
+
+	// Если массив идентификаторов пустой, то вернуть ошибку
+	if len(ids) == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"error":"Empty batch"}`))
+		return
+	}
+
+	err = storage.DeleteKeys(userID, ids)
+	if err != nil {
+		log.Warn().Err(err).Msg("APIDeleteURLsHandler> Cannot delete shortIDs from RAM")
+	}
+
+	err = app.DeleteKeysFromStore(ctx, userID, ids)
+	if err != nil {
+		log.Warn().Err(err).Msg("APIDeleteURLsHandler> Cannot delete shortIDs from the database")
+	}
+
+	w.WriteHeader(http.StatusAccepted)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"status":"Accepted"}`))
 }

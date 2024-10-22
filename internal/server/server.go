@@ -29,6 +29,7 @@ func ServeChi() {
 		r.Post("/shorten", handlers.APIShortenHandler)
 		r.Post("/shorten/batch", handlers.APIShortenBatchHandler)
 		r.Get("/user/urls", handlers.APIUserURLsHandler)
+		r.Delete("/user/urls", handlers.APIDeleteURLsHandler)
 	})
 
 	address := config.Params.ServerAddress
