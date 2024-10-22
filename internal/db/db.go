@@ -140,7 +140,7 @@ func DeleteKeys(ctx context.Context, userID string, keys []any) error {
 		return errors.New("DeleteKeys. No connection to DB")
 	}
 	// если ключи не переданы, возвращаем успех
-	if keys == nil || len(keys) == 0 {
+	if len(keys) == 0 {
 		return nil
 	}
 
