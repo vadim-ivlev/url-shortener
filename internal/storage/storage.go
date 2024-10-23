@@ -165,7 +165,6 @@ func DeleteKeys(userID string, keys []any) error {
 		go func() {
 			err := Delete(userID, k)
 			if err != nil {
-				// return err
 				log.Error().Msgf("DeleteKeys> %v", err)
 			}
 		}()
