@@ -123,7 +123,7 @@ func GetData() (data map[string]string) {
 // - key - ключ
 // Возвращает ошибку
 func Delete(userID, key string) error {
-	// TODO: move down? Блокируем доступ к хранилищу
+	// Блокируем доступ к хранилищу
 	dm.mutex.Lock()
 	defer dm.mutex.Unlock()
 
@@ -162,20 +162,16 @@ func DeleteKeys(userID string, keys []any) error {
 		if !ok {
 			return fmt.Errorf("key %v is not a string", key)
 		}
-		err := Delete(userID, k)
-		if err != nil {
-			return err
-		}
+		go func() {
+			err := Delete(userID, k)
+			if err != nil {
+				// return err
+				log.Error().Msgf("DeleteKeys> %v", err)
+			}
+		}()
 	}
 	return nil
 }
-
-// // RemoveKey - удаляет ключ из хранилища.
-// func RemoveKey(key string) {
-// 	dm.mutex.Lock()
-// 	defer dm.mutex.Unlock()
-// 	delete(dm.keyToValue, key)
-// }
 
 // IsDeletedKey - проверяет, является ли ключ удаленным.
 func IsDeletedKey(key string) bool {

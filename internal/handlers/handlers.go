@@ -363,7 +363,7 @@ func APIUserURLsHandler(w http.ResponseWriter, r *http.Request) {
 	userID := GetUserIDFromContext(r.Context())
 	newUserID := GetNewUserIDFromContext(r.Context())
 
-	// TODO: Проверить, что ID пользователя не пустой, или это новый пользователь с только что сгенерированным ID
+	// Проверить, что ID пользователя не пустой, или это новый пользователь с только что сгенерированным ID
 	if userID == "" || newUserID == "new" {
 		log.Error().Msg("APIUserURLsHandler> User ID not found or User ID was generated on the fly")
 		w.WriteHeader(http.StatusUnauthorized)
@@ -438,6 +438,7 @@ func GetNewUserIDFromContext(ctx context.Context) (newUserID string) {
 // Фактический результат удаления может происходить позже.
 // Оповещать пользователя об успешности или неуспешности не нужно.
 func APIDeleteURLsHandler(w http.ResponseWriter, r *http.Request) {
+	// Получить userID из контекста
 	ctx := r.Context()
 	userID := GetUserIDFromContext(ctx)
 	log.Info().Msgf("APIDeleteURLsHandler> User ID '%v' ", userID)
@@ -472,9 +473,20 @@ func APIDeleteURLsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = storage.DeleteKeys(userID, ids)
+	// Удалить короткие URL
+	go deleteKeys(ctx, userID, ids)
+
+	w.WriteHeader(http.StatusAccepted)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"status":"Accepted"}`))
+}
+
+// deleteKeys - удаляет короткие URL из хранилища в RAM и из базы данных.
+func deleteKeys(ctx context.Context, userID string, ids []any) error {
+	err := storage.DeleteKeys(userID, ids)
 	if err != nil {
 		log.Warn().Err(err).Msg("APIDeleteURLsHandler> Cannot delete shortIDs from RAM")
+		return err
 	}
 
 	err = app.DeleteKeysFromStore(ctx, userID, ids)
@@ -482,7 +494,5 @@ func APIDeleteURLsHandler(w http.ResponseWriter, r *http.Request) {
 		log.Warn().Err(err).Msg("APIDeleteURLsHandler> Cannot delete shortIDs from the database")
 	}
 
-	w.WriteHeader(http.StatusAccepted)
-	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(`{"status":"Accepted"}`))
+	return nil
 }
