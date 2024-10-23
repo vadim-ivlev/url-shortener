@@ -104,3 +104,81 @@ func AddToStore(ctx context.Context, shortID, originalURL string) (err error) {
 	}
 	return nil
 }
+
+// GetUserURLs возвращает пользователю все когда-либо сокращённые им `URL` в формате:
+// ```json
+// [
+//
+//	{
+//	    "short_url": "http://...",
+//	    "original_url": "http://..."
+//	},
+//	...
+//
+// ]
+func GetUserURLs(userID string) (urls []map[string]string) {
+	urls = make([]map[string]string, 0)
+	// Получить данные из хранилища
+	storageData := storage.GetData()
+	for recordShortID, recordValue := range storageData {
+
+		recordUserID, RecordOriginalURL := SplitUserAndURL(recordValue)
+		if recordUserID != userID {
+			continue
+		}
+		urls = append(urls, map[string]string{"short_url": ShortURL(recordShortID), "original_url": RecordOriginalURL})
+	}
+	return urls
+}
+
+// JoinUserAndURL - объединяет ID пользователя и URL.
+func JoinUserAndURL(userID, URL string) string {
+	// return URL
+	return userID + "@" + URL
+}
+
+// SplitUserAndURL - разделяет ID пользователя и URL.
+func SplitUserAndURL(userAndURL string) (userID, URL string) {
+	parts := strings.Split(userAndURL, "@")
+	if len(parts) != 2 {
+		return "", ""
+	}
+	return parts[0], parts[1]
+}
+
+func DeleteKeysFromStore(ctx context.Context, userID string, keys []any) error {
+	// Пометить keys как удаленные в базе данных
+	if config.Params.DatabaseDSN != "" {
+		err := db.DeleteKeys(ctx, userID, keys)
+		if err != nil {
+			log.Warn().Err(err).Msg("Cannot delete shortID from the database")
+			return err
+		}
+	}
+	// Пометить keys как удаленные в файловом хранилище
+	if config.Params.FileStoragePath != "" {
+		err := DumpDataToFilestorage()
+		if err != nil {
+			log.Warn().Err(err).Msg("Cannot save shortened url in the filestorage")
+			return err
+		}
+	}
+	return nil
+}
+
+// DumpDataToFilestorage - сохраняет данные из RAM в файловое хранилище.
+func DumpDataToFilestorage() error {
+	if config.Params.FileStoragePath == "" {
+		return nil
+	}
+	filestorage.Clear()
+	storageData := storage.GetData()
+	for recordShortID, recordValue := range storageData {
+		err := filestorage.Store(ShortURL(recordShortID), recordValue)
+		if err != nil {
+			log.Warn().Err(err).Msg("Cannot save shortened url in the filestorage")
+			return err
+		}
+	}
+	return nil
+}

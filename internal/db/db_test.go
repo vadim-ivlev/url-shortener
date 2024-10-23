@@ -76,3 +76,38 @@ func TestConnectToDatabase(t *testing.T) {
 		})
 	}
 }
+
+func Test_generateDollarSigns(t *testing.T) {
+	type args struct {
+		n     int
+		start int
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "Test_generateDollarSigns 0",
+			args: args{n: 0, start: 5},
+			want: "()",
+		},
+		{
+			name: "Test_generateDollarSigns 1",
+			args: args{n: 1, start: 5},
+			want: "($5)",
+		},
+		{
+			name: "Test_generateDollarSigns 2",
+			args: args{n: 2, start: 5},
+			want: "($5, $6)",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := generateDollarSigns(tt.args.n, tt.args.start); got != tt.want {
+				t.Errorf("generateDollarSigns() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
