@@ -13,14 +13,13 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
 )
 
 // FileStorageRecord - структура для хранения записи в файловом хранилище.
 type FileStorageRecord struct {
-	UUID        string `json:"uuid"`
-	ShortURL    string `json:"short_url"`
+	ShortID     string `json:"short_id"`
 	OriginalURL string `json:"original_url"`
 }
 
@@ -39,19 +38,13 @@ func createDirIfNotExists(filePath string) error {
 
 // Store - сохраняет данные в файловое хранилище.
 // Параметры:
-// - shortURL - укороченный URL.
+// - shortID - укороченный ID.
 // - originalURL - оригинальный URL.
 // Возвращает ошибку, если запись не удалась.
-func Store(shortURL, originalURL string) error {
-	// Генерируем новый UUID
-	uuid, err := uuid.NewV7()
-	if err != nil {
-		return err
-	}
+func Store(shortID, originalURL string) error {
 	// Создаем новую запись
 	record := FileStorageRecord{
-		UUID:        uuid.String(),
-		ShortURL:    shortURL,
+		ShortID:     shortID,
 		OriginalURL: originalURL,
 	}
 
@@ -77,6 +70,7 @@ func Store(shortURL, originalURL string) error {
 	if _, err := file.Write(append(recordJSON, '\n')); err != nil {
 		return err
 	}
+	log.Info().Msgf("Record saved to filestorage: %s in file %s", recordJSON, config.Params.FileStoragePath)
 	return nil
 }
 

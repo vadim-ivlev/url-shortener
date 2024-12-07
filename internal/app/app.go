@@ -94,7 +94,7 @@ func AddToStore(ctx context.Context, shortID, originalURL string) (err error) {
 		}
 	case config.Params.FileStoragePath != "":
 		// сохранить shortID и оригинальный URL в файловое хранилище
-		err := filestorage.Store(ShortURL(shortID), originalURL)
+		err := filestorage.Store(shortID, originalURL)
 		if err != nil {
 			log.Warn().Err(err).Msg("Cannot save shortened url in the filestorage")
 			return err
@@ -174,7 +174,7 @@ func DumpDataToFilestorage() error {
 	filestorage.Clear()
 	storageData := storage.GetData()
 	for recordShortID, recordValue := range storageData {
-		err := filestorage.Store(ShortURL(recordShortID), recordValue)
+		err := filestorage.Store(recordShortID, recordValue)
 		if err != nil {
 			log.Warn().Err(err).Msg("Cannot save shortened url in the filestorage")
 			return err
