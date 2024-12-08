@@ -8,7 +8,7 @@ rm -rf ./data
 
 
 echo "Останавливаем базу данных, для эмуляции поведения GitHub CI ***********************"
-docker compose down
+docker compose down -v
 
 
 

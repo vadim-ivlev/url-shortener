@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/rs/zerolog/log"
 	"github.com/vadim-ivlev/url-shortener/internal/apptypes"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
 )
@@ -15,7 +14,7 @@ import (
 // - record - запись для сохранения.
 //
 // Возвращает ошибку, если запись не удалась.
-func AddRecord(record apptypes.UrlShortener) error {
+func AddRecord(record apptypes.URLShortener) error {
 	// Проверяем нужно ли сохранять запись в файловое хранилище
 	if !config.UseFileStorage() {
 		return nil
@@ -28,12 +27,12 @@ func AddRecord(record apptypes.UrlShortener) error {
 	}
 
 	// Создаем директорию для файла хранилища, если ее нет
-	if err := createDirIfNotExists(config.Params.FileStoragePath + "1"); err != nil {
+	if err := createDirIfNotExists(config.Params.FileStoragePath); err != nil {
 		return err
 	}
 
 	// Открываем файл для записи (добавляем в конец файла) или создаем новый
-	file, err := os.OpenFile(config.Params.FileStoragePath+"1", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(config.Params.FileStoragePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
@@ -43,7 +42,7 @@ func AddRecord(record apptypes.UrlShortener) error {
 	if _, err := file.Write(append(recordJSON, '\n')); err != nil {
 		return err
 	}
-	log.Info().Msgf("Record saved to filestorage: %s in file %s", recordJSON, config.Params.FileStoragePath+"1")
+	// log.Info().Msgf("Record saved to filestorage: %s in file %s", recordJSON, config.Params.FileStoragePath)
 	return nil
 }
 
@@ -53,7 +52,7 @@ func AddRecord(record apptypes.UrlShortener) error {
 // - records - записи для сохранения.
 //
 // Возвращает ошибку, если запись не удалась.
-func DumpRecords(records []apptypes.UrlShortener) error {
+func DumpRecords(records []apptypes.URLShortener) error {
 	// Проверяем нужно ли сохранять запись в файловое хранилище
 	if !config.UseFileStorage() {
 		return nil

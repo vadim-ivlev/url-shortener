@@ -13,7 +13,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/rs/zerolog/log"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
 )
 
@@ -70,7 +69,7 @@ func Store(shortID, originalURL string) error {
 	if _, err := file.Write(append(recordJSON, '\n')); err != nil {
 		return err
 	}
-	log.Info().Msgf("Record saved to filestorage: %s in file %s", recordJSON, config.Params.FileStoragePath)
+	// log.Info().Msgf("Record saved to filestorage: %s in file %s", recordJSON, config.Params.FileStoragePath)
 	return nil
 }
 

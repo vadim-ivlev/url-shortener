@@ -93,7 +93,7 @@ func SetResponseCookie(w http.ResponseWriter, cookieValue string) {
 func AddUserIDToContext(ctx context.Context, newUserID, keyLabel string) (newCtx context.Context) {
 	newCtx = context.WithValue(ctx, UserIDKey, newUserID)
 	newCtx = context.WithValue(newCtx, NewUserIDKey, keyLabel)
-	log.Info().Msgf(">>> AddUserIDToContext> New User ID '%v' is added to request context", newUserID)
+	// log.Info().Msgf(">>> AddUserIDToContext> New User ID '%v' is added to request context", newUserID)
 	return newCtx
 }
 

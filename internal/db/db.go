@@ -72,7 +72,7 @@ func Store(ctx context.Context, shortID, originalURL string) error {
 // - record - запись для сохранения.
 //
 // Возвращает ошибку, если запись не удалась.
-func AddRecord(record apptypes.UrlShortener) error {
+func AddRecord(record apptypes.URLShortener) error {
 	// Проверяем нужно ли сохранять запись в файловое хранилище
 	if !config.UseDatabase() {
 		return nil
@@ -83,6 +83,26 @@ func AddRecord(record apptypes.UrlShortener) error {
 	}
 
 	_, err := DB.Exec("INSERT INTO urls1 (idx, short_id, original_url, user_id, deleted) VALUES ($1, $2, $3, $4, $5)", record.Idx, record.ShortID, record.OriginalURL, record.UserID, record.Deleted)
+	return err
+}
+
+// UpdateRecord - обновляет запись в базе данных.
+//
+// Параметры:
+// - record - запись для сохранения.
+//
+// Возвращает ошибку, если запись не удалась.
+func UpdateRecord(record apptypes.URLShortener) error {
+	// Проверяем нужно ли сохранять запись в файловое хранилище
+	if !config.UseDatabase() {
+		return nil
+	}
+
+	if !IsConnected() {
+		return errors.New("UpdateRecord. No connection to DB")
+	}
+
+	_, err := DB.Exec("UPDATE urls1 SET idx = $1,  short_id = $2, original_url = $3, user_id = $4, deleted = $5 WHERE short_id = $6", record.Idx, record.ShortID, record.OriginalURL, record.UserID, record.Deleted, record.ShortID)
 	return err
 }
 
@@ -177,6 +197,12 @@ func DeleteKeys(ctx context.Context, userID string, keys []any) error {
 	args = append(args, keys...)
 
 	// выполняем запрос
-	_, err := DB.ExecContext(ctx, query, args...)
+	// // Check if ctx canceled
+	// ctx, cancel := context.WithCancel(ctx)
+	// defer cancel()
+
+	// _, err := DB.ExecContext(ctx, query, args...)
+	_, err := DB.Exec(query, args...)
+	// log.Info().Msgf("*********************************")
 	return err
 }

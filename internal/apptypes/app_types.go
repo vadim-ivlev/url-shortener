@@ -1,7 +1,7 @@
 package apptypes
 
 // Структура для хранения данных в памяти.
-type UrlShortener struct {
+type URLShortener struct {
 	Idx         int64  `json:"idx" db:"idx"`
 	ShortID     string `json:"short_id" db:"short_id"`
 	OriginalURL string `json:"original_url" db:"original_url"`

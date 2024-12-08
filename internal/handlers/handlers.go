@@ -45,7 +45,7 @@ func generateAndSaveShortURL(ctx context.Context, originalURL string) (shortURL 
 func ShortenURLHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	userID := GetUserIDFromContext(ctx)
-	log.Info().Msgf("ShortenURLHandler> User ID '%v' ", userID)
+	// log.Info().Msgf("ShortenURLHandler> User ID '%v' ", userID)
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -59,7 +59,7 @@ func ShortenURLHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Сгенерировать короткий id и сохранить его
-	memstore.Store.Add(apptypes.UrlShortener{OriginalURL: originalURL, UserID: userID})
+	memstore.Store.Add(apptypes.URLShortener{OriginalURL: originalURL, UserID: userID})
 	shortURL, aNewOne, err := generateAndSaveShortURL(ctx, app.JoinUserAndURL(userID, originalURL))
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -90,8 +90,8 @@ func RedirectHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Получить userID из контекста
-	userID := GetUserIDFromContext(r.Context())
-	log.Info().Msgf("RedirectHandler> User ID from context = '%v' ", userID)
+	// userID := GetUserIDFromContext(r.Context())
+	//log.Info().Msgf("RedirectHandler> User ID from context = '%v' ", userID)
 
 	// Получить оригинальный URL по id и перенаправить
 	storedValue := storage.Get(id)
@@ -180,7 +180,7 @@ func APIShortenHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Сгенерировать короткий id и сохранить его
-	memstore.Store.Add(apptypes.UrlShortener{OriginalURL: originalURL, UserID: userID})
+	memstore.Store.Add(apptypes.URLShortener{OriginalURL: originalURL, UserID: userID})
 	shortURL, aNewOne, err := generateAndSaveShortURL(ctx, app.JoinUserAndURL(userID, originalURL))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -314,7 +314,7 @@ func APIShortenBatchHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		// Сгенерировать короткий id и сохранить его в хранилище и в БД
-		memstore.Store.Add(apptypes.UrlShortener{OriginalURL: originalURL, UserID: userID})
+		memstore.Store.Add(apptypes.URLShortener{OriginalURL: originalURL, UserID: userID})
 		shortURL, _, err := generateAndSaveShortURL(ctx, app.JoinUserAndURL(userID, originalURL))
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -446,7 +446,7 @@ func APIDeleteURLsHandler(w http.ResponseWriter, r *http.Request) {
 	// Получить userID из контекста
 	ctx := r.Context()
 	userID := GetUserIDFromContext(ctx)
-	log.Info().Msgf("APIDeleteURLsHandler> User ID '%v' ", userID)
+	// log.Info().Msgf("APIDeleteURLsHandler> User ID '%v' ", userID)
 
 	// Прочитать тело запроса
 	body, err := io.ReadAll(r.Body)
@@ -488,6 +488,7 @@ func APIDeleteURLsHandler(w http.ResponseWriter, r *http.Request) {
 
 // deleteKeys - удаляет короткие URL из хранилища в RAM и из базы данных.
 func deleteKeys(ctx context.Context, userID string, ids []any) error {
+	memstore.Store.DeleteShortIDs(userID, ids)
 	err := storage.DeleteKeys(userID, ids)
 	if err != nil {
 		log.Warn().Err(err).Msg("APIDeleteURLsHandler> Cannot delete shortIDs from RAM")

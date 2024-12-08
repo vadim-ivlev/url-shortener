@@ -25,7 +25,7 @@ var ErrRecordNotFound = errors.New("record not found")
 // Имеет два уникальных индекса для быстрого поиска записей по shortID и UserID+originalURL.
 type Urls struct {
 	// Записи
-	Records []apptypes.UrlShortener
+	Records []apptypes.URLShortener
 	// Мьютекс для защиты записей
 	mutex sync.Mutex
 	// Индекс для поиска записей по shortID
@@ -34,18 +34,18 @@ type Urls struct {
 	idxUserIDOriginalURL *Index
 }
 
-func idxShortIDKeyFunc(record apptypes.UrlShortener) string {
+func idxShortIDKeyFunc(record apptypes.URLShortener) string {
 	return record.ShortID
 }
 
-func idxUserIDOriginalURLKeyFunc(record apptypes.UrlShortener) string {
+func idxUserIDOriginalURLKeyFunc(record apptypes.URLShortener) string {
 	return record.UserID + "@" + record.OriginalURL
 }
 
 // NewUrls создает новое хранилище Urls.
 func NewUrls() *Urls {
 	return &Urls{
-		Records:              make([]apptypes.UrlShortener, 0),
+		Records:              make([]apptypes.URLShortener, 0),
 		idxShortID:           NewIndex(idxShortIDKeyFunc),
 		idxUserIDOriginalURL: NewIndex(idxUserIDOriginalURLKeyFunc),
 	}
@@ -60,7 +60,7 @@ func NewUrls() *Urls {
 // - добавленную запись, или ту, что уже есть в хранилище.
 // - true, если запись была добавлена, false, если запись уже есть в хранилище.
 // - ошибку, если запись не удалось добавить.
-func (u *Urls) Add(record apptypes.UrlShortener) (addedRecord apptypes.UrlShortener, created bool, err error) {
+func (u *Urls) Add(record apptypes.URLShortener) (addedRecord apptypes.URLShortener, created bool, err error) {
 	u.mutex.Lock()
 	defer u.mutex.Unlock()
 
@@ -103,11 +103,11 @@ func (u *Urls) Add(record apptypes.UrlShortener) (addedRecord apptypes.UrlShorte
 // Возвращает:
 // - запись, если она найдена или nil
 // - ошибку, если запись не найдена.
-func (u *Urls) GetByShortID(shortID string) (record *apptypes.UrlShortener, err error) {
+func (u *Urls) GetByShortID(shortID string) (record *apptypes.URLShortener, err error) {
 	u.mutex.Lock()
 	defer u.mutex.Unlock()
 
-	idx, ok := u.idxShortID.Get(apptypes.UrlShortener{ShortID: shortID})
+	idx, ok := u.idxShortID.Get(apptypes.URLShortener{ShortID: shortID})
 	if !ok {
 		return nil, ErrRecordNotFound
 	}
@@ -122,11 +122,11 @@ func (u *Urls) GetByShortID(shortID string) (record *apptypes.UrlShortener, err 
 //
 // Возвращает:
 // - массив записей пользователя.
-func (u *Urls) GetByUserID(userID string) (records []apptypes.UrlShortener) {
+func (u *Urls) GetByUserID(userID string) (records []apptypes.URLShortener) {
 	u.mutex.Lock()
 	defer u.mutex.Unlock()
 
-	result := make([]apptypes.UrlShortener, 0)
+	result := make([]apptypes.URLShortener, 0)
 	for _, record := range u.Records {
 		if record.UserID == userID {
 			result = append(result, record)
@@ -150,7 +150,7 @@ func (u *Urls) Delete(userID, shortID string) error {
 	defer u.mutex.Unlock()
 
 	// Проверяем, существует ли запись
-	idx, ok := u.idxShortID.Get(apptypes.UrlShortener{ShortID: shortID})
+	idx, ok := u.idxShortID.Get(apptypes.URLShortener{ShortID: shortID})
 	if !ok {
 		return ErrRecordNotFound
 	}
@@ -175,6 +175,13 @@ func (u *Urls) Delete(userID, shortID string) error {
 	// Сохраняем запись в файловое хранилище
 	filestorage.DumpRecords(u.Records)
 
+	// Сохраняем в базу данных
+	err1 := db.UpdateRecord(u.Records[idx])
+	// log.Info().Msgf("DEL >>> Record %#v deleted", u.Records[idx])
+	if err1 != nil {
+		log.Error().Err(err1).Msg("DeleteKeysFromStore")
+	}
+
 	return nil
 }
 
@@ -185,14 +192,14 @@ func (u *Urls) Delete(userID, shortID string) error {
 // - keys - массив ShortID
 //
 // Возвращает ошибку
-func (u *Urls) DeleteShortIDs(userID string, shortIDs []string) error {
+func (u *Urls) DeleteShortIDs(userID string, shortIDs []any) error {
 	for _, shortID := range shortIDs {
 		go func(shortID string) {
 			err := u.Delete(userID, shortID)
 			if err != nil {
 				fmt.Println(err)
 			}
-		}(shortID)
+		}(shortID.(string))
 	}
 
 	return nil
