@@ -54,7 +54,7 @@ func PrintParams() {
 
 // useFileStorage - возвращает true, если нужно использовать файловое хранилище.
 func UseFileStorage() bool {
-	return Params.FileStoragePath != "" && Params.DatabaseDSN != ""
+	return Params.FileStoragePath != "" && Params.DatabaseDSN == ""
 }
 
 // UseDatabase - возвращает true, если нужно использовать базу данных.

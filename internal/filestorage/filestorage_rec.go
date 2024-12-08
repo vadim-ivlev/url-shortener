@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 
+	"github.com/rs/zerolog/log"
 	"github.com/vadim-ivlev/url-shortener/internal/apptypes"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
 )
@@ -42,7 +43,7 @@ func AddRecord(record apptypes.URLShortener) error {
 	if _, err := file.Write(append(recordJSON, '\n')); err != nil {
 		return err
 	}
-	// log.Info().Msgf("Record saved to filestorage: %s in file %s", recordJSON, config.Params.FileStoragePath)
+	log.Info().Msgf("Record saved to filestorage: %s in file %s", recordJSON, config.Params.FileStoragePath)
 	return nil
 }
 

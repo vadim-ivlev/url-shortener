@@ -13,6 +13,7 @@ import (
 	"github.com/vadim-ivlev/url-shortener/internal/db"
 	"github.com/vadim-ivlev/url-shortener/internal/filestorage"
 	"github.com/vadim-ivlev/url-shortener/internal/logger"
+	"github.com/vadim-ivlev/url-shortener/internal/memstore"
 	"github.com/vadim-ivlev/url-shortener/internal/storage"
 )
 
@@ -42,7 +43,8 @@ func InitApp() {
 		log.Warn().Err(err).Msg("Cannot load data to storage")
 	}
 	// Печать содержимого хранилища в лог
-	storage.PrintContent(0)
+	// storage.PrintContent(5)
+	memstore.Store.PrintContent(5)
 }
 
 // Получить короткий URL из shortID

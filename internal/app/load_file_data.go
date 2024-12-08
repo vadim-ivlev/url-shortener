@@ -7,9 +7,9 @@ import (
 	"os"
 
 	"github.com/rs/zerolog/log"
+	"github.com/vadim-ivlev/url-shortener/internal/apptypes"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
-	"github.com/vadim-ivlev/url-shortener/internal/filestorage"
-	"github.com/vadim-ivlev/url-shortener/internal/storage"
+	"github.com/vadim-ivlev/url-shortener/internal/memstore"
 )
 
 // LoadFileDataToStorage - загружает данные из файлового хранилища в storage.
@@ -24,17 +24,21 @@ func LoadFileDataToStorage() (err error) {
 	defer file.Close()
 
 	// Читаем все записи из файла
-	records := make([]filestorage.FileStorageRecord, 0)
+	// records := make([]filestorage.FileStorageRecord, 0)
+	records := make([]apptypes.URLShortener, 0)
 	decoder := json.NewDecoder(file)
 	for {
-		var record filestorage.FileStorageRecord
+		// var record filestorage.FileStorageRecord
+		var record apptypes.URLShortener
 		if err := decoder.Decode(&record); err != nil {
 			break
 		}
 		records = append(records, record)
 
 		// Добавляем запись в карту хранилища
-		storage.Set(record.ShortID, record.OriginalURL)
+		// storage.Set(record.ShortID, record.OriginalURL)
+		memstore.Store.Add(record)
+
 	}
 
 	log.Info().Msgf("%d Records loaded from filestorage", len(records))

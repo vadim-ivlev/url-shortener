@@ -59,8 +59,9 @@ func ShortenURLHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Сгенерировать короткий id и сохранить его
-	memstore.Store.Add(apptypes.URLShortener{OriginalURL: originalURL, UserID: userID})
-	shortURL, aNewOne, err := generateAndSaveShortURL(ctx, app.JoinUserAndURL(userID, originalURL))
+	// memstore.Store.Add(apptypes.URLShortener{OriginalURL: originalURL, UserID: userID})
+	record, aNewOne, err := memstore.Store.Add(apptypes.URLShortener{OriginalURL: originalURL, UserID: userID})
+	// shortURL, aNewOne, err := generateAndSaveShortURL(ctx, app.JoinUserAndURL(userID, originalURL))
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
@@ -75,7 +76,8 @@ func ShortenURLHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(status)
 	w.Header().Set("Content-Type", "text/plain")
-	w.Write([]byte(shortURL))
+	// w.Write([]byte(shortURL))
+	w.Write([]byte(app.ShortURL(record.ShortID)))
 }
 
 // RedirectHandler обрабатывает GET-запросы для перенаправления на оригинальный URL.
@@ -93,23 +95,35 @@ func RedirectHandler(w http.ResponseWriter, r *http.Request) {
 	// userID := GetUserIDFromContext(r.Context())
 	//log.Info().Msgf("RedirectHandler> User ID from context = '%v' ", userID)
 
-	// Получить оригинальный URL по id и перенаправить
-	storedValue := storage.Get(id)
-	if storedValue == "" {
-		// Проверить не удаленный ли это URL
-		if storage.IsDeletedKey(id) {
-			http.Error(w, "URL was deleted", http.StatusGone)
-			return
-		}
+	// // Получить оригинальный URL по id и перенаправить
+	// storedValue := storage.Get(id)
+	// if storedValue == "" {
+	// 	// Проверить не удаленный ли это URL
+	// 	if storage.IsDeletedKey(id) {
+	// 		http.Error(w, "URL was deleted", http.StatusGone)
+	// 		return
+	// 	}
+	// 	http.Error(w, "URL not found", http.StatusBadRequest)
+	// 	return
+	// }
+
+	// Получить запись из хранилища в RAM
+	record, err := memstore.Store.GetByShortID(id)
+	// проверить, что запись найдена
+	if err != nil {
 		http.Error(w, "URL not found", http.StatusBadRequest)
 		return
 	}
 
-	log.Info().Msgf("RedirectHandler> storedValue = '%v'", storedValue)
-	storedUserID, storedURL := app.SplitUserAndURL(storedValue)
-	log.Info().Msgf("RedirectHandler> storedUserID = '%v', storedURL = '%v'", storedUserID, storedURL)
+	// Проверить не удаленный ли это URL
+	if record.Deleted != 0 {
+		http.Error(w, "URL was deleted", http.StatusGone)
+		return
+	}
 
-	http.Redirect(w, r, storedURL, http.StatusTemporaryRedirect)
+	log.Info().Msgf("RedirectHandler> %+v '", record)
+
+	http.Redirect(w, r, record.OriginalURL, http.StatusTemporaryRedirect)
 }
 
 // PingHandler - при запросе проверяет соединение с базой данных.
@@ -180,8 +194,8 @@ func APIShortenHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Сгенерировать короткий id и сохранить его
-	memstore.Store.Add(apptypes.URLShortener{OriginalURL: originalURL, UserID: userID})
-	shortURL, aNewOne, err := generateAndSaveShortURL(ctx, app.JoinUserAndURL(userID, originalURL))
+	record, aNewOne, err := memstore.Store.Add(apptypes.URLShortener{OriginalURL: originalURL, UserID: userID})
+	// shortURL, aNewOne, err := generateAndSaveShortURL(ctx, app.JoinUserAndURL(userID, originalURL))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Header().Set("Content-Type", "application/json")
@@ -191,7 +205,8 @@ func APIShortenHandler(w http.ResponseWriter, r *http.Request) {
 
 	resp := struct {
 		Result string `json:"result"`
-	}{Result: shortURL}
+		// }{Result: shortURL}
+	}{Result: app.ShortURL(record.ShortID)}
 
 	respBody, err := json.Marshal(resp)
 	if err != nil {
@@ -314,8 +329,8 @@ func APIShortenBatchHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		// Сгенерировать короткий id и сохранить его в хранилище и в БД
-		memstore.Store.Add(apptypes.URLShortener{OriginalURL: originalURL, UserID: userID})
-		shortURL, _, err := generateAndSaveShortURL(ctx, app.JoinUserAndURL(userID, originalURL))
+		record, _, err := memstore.Store.Add(apptypes.URLShortener{OriginalURL: originalURL, UserID: userID})
+		// shortURL, _, err := generateAndSaveShortURL(ctx, app.JoinUserAndURL(userID, originalURL))
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Header().Set("Content-Type", "application/json")
@@ -323,6 +338,7 @@ func APIShortenBatchHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		shortURL := app.ShortURL(record.ShortID)
 		outputRecords = append(outputRecords, outRec{CorrelationID: r.CorrelationID, ShortURL: shortURL})
 	}
 
@@ -378,7 +394,12 @@ func APIUserURLsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Получить все короткие URL пользователя
-	urls := app.GetUserURLs(userID)
+	// urls := app.GetUserURLs(userID)
+	records := memstore.Store.GetByUserID(userID)
+	urls := map[string]string{}
+	for _, record := range records {
+		urls[record.ShortID] = record.OriginalURL
+	}
 
 	// Подготовливаем тело ответа
 	respBody, err := json.Marshal(urls)
