@@ -1,4 +1,4 @@
-package app
+package apptypes
 
 // Структура для хранения данных в памяти.
 type UrlShortener struct {

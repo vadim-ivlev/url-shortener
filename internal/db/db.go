@@ -9,6 +9,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/rs/zerolog/log"
+	"github.com/vadim-ivlev/url-shortener/internal/apptypes"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
 )
 
@@ -62,6 +63,26 @@ func Store(ctx context.Context, shortID, originalURL string) error {
 		return errors.New("Store. No connection to DB")
 	}
 	_, err := DB.ExecContext(ctx, "INSERT INTO urls (short_id, original_url) VALUES ($1, $2)", shortID, originalURL)
+	return err
+}
+
+// AddRecord - добавляет запись в базу данных.
+//
+// Параметры:
+// - record - запись для сохранения.
+//
+// Возвращает ошибку, если запись не удалась.
+func AddRecord(record apptypes.UrlShortener) error {
+	// Проверяем нужно ли сохранять запись в файловое хранилище
+	if !config.UseDatabase() {
+		return nil
+	}
+
+	if !IsConnected() {
+		return errors.New("AddRecord. No connection to DB")
+	}
+
+	_, err := DB.Exec("INSERT INTO urls (short_id, original_url) VALUES ($1, $2)", record.ShortID, record.OriginalURL)
 	return err
 }
 

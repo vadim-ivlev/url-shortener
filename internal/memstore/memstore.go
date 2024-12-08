@@ -6,7 +6,9 @@ import (
 
 	"errors"
 
-	"github.com/vadim-ivlev/url-shortener/internal/app"
+	"github.com/vadim-ivlev/url-shortener/internal/apptypes"
+	"github.com/vadim-ivlev/url-shortener/internal/db"
+	"github.com/vadim-ivlev/url-shortener/internal/filestorage"
 	"github.com/vadim-ivlev/url-shortener/internal/shortener"
 )
 
@@ -18,7 +20,7 @@ var ErrRecordNotFound = errors.New("record not found")
 // Имеет два уникальных индекса для быстрого поиска записей по shortID и UserID+originalURL.
 type Urls struct {
 	// Записи
-	Records []app.UrlShortener
+	Records []apptypes.UrlShortener
 	// Мьютекс для защиты записей
 	mutex sync.Mutex
 	// Индекс для поиска записей по shortID
@@ -27,18 +29,18 @@ type Urls struct {
 	idxUserIDOriginalURL *Index
 }
 
-func idxShortIDKeyFunc(record app.UrlShortener) string {
+func idxShortIDKeyFunc(record apptypes.UrlShortener) string {
 	return record.ShortID
 }
 
-func idxUserIDOriginalURLKeyFunc(record app.UrlShortener) string {
+func idxUserIDOriginalURLKeyFunc(record apptypes.UrlShortener) string {
 	return record.UserID + "@" + record.OriginalURL
 }
 
 // NewUrls создает новое хранилище Urls.
 func NewUrls() *Urls {
 	return &Urls{
-		Records:              make([]app.UrlShortener, 0),
+		Records:              make([]apptypes.UrlShortener, 0),
 		idxShortID:           NewIndex(idxShortIDKeyFunc),
 		idxUserIDOriginalURL: NewIndex(idxUserIDOriginalURLKeyFunc),
 	}
@@ -53,7 +55,7 @@ func NewUrls() *Urls {
 // - добавленную запись, или ту, что уже есть в хранилище.
 // - true, если запись была добавлена, false, если запись уже есть в хранилище.
 // - ошибку, если запись не удалось добавить.
-func (u *Urls) Add(record app.UrlShortener) (addedRecord app.UrlShortener, created bool, err error) {
+func (u *Urls) Add(record apptypes.UrlShortener) (addedRecord apptypes.UrlShortener, created bool, err error) {
 	u.mutex.Lock()
 	defer u.mutex.Unlock()
 
@@ -76,6 +78,12 @@ func (u *Urls) Add(record app.UrlShortener) (addedRecord app.UrlShortener, creat
 	u.idxShortID.Add(record, record.Idx)
 	u.idxUserIDOriginalURL.Add(record, record.Idx)
 
+	// Сохраняем запись в файловое хранилище
+	filestorage.AddRecord(record)
+
+	// Сохраняем в базу данных
+	db.AddRecord(record)
+
 	return record, true, nil
 }
 
@@ -87,11 +95,11 @@ func (u *Urls) Add(record app.UrlShortener) (addedRecord app.UrlShortener, creat
 // Возвращает:
 // - запись, если она найдена или nil
 // - ошибку, если запись не найдена.
-func (u *Urls) GetByShortID(shortID string) (record *app.UrlShortener, err error) {
+func (u *Urls) GetByShortID(shortID string) (record *apptypes.UrlShortener, err error) {
 	u.mutex.Lock()
 	defer u.mutex.Unlock()
 
-	idx, ok := u.idxShortID.Get(app.UrlShortener{ShortID: shortID})
+	idx, ok := u.idxShortID.Get(apptypes.UrlShortener{ShortID: shortID})
 	if !ok {
 		return nil, ErrRecordNotFound
 	}
@@ -106,11 +114,11 @@ func (u *Urls) GetByShortID(shortID string) (record *app.UrlShortener, err error
 //
 // Возвращает:
 // - массив записей пользователя.
-func (u *Urls) GetByUserID(userID string) (records []app.UrlShortener) {
+func (u *Urls) GetByUserID(userID string) (records []apptypes.UrlShortener) {
 	u.mutex.Lock()
 	defer u.mutex.Unlock()
 
-	result := make([]app.UrlShortener, 0)
+	result := make([]apptypes.UrlShortener, 0)
 	for _, record := range u.Records {
 		if record.UserID == userID {
 			result = append(result, record)
@@ -120,7 +128,7 @@ func (u *Urls) GetByUserID(userID string) (records []app.UrlShortener) {
 	return result
 }
 
-// Delete - делает пометку записи как удаленную и удаляет ее из индексов.
+// Delete - делает пометку записи как удаленную.
 // Удалить ключ может только пользователь его создавший.
 //
 // Параметры:
@@ -134,7 +142,7 @@ func (u *Urls) Delete(userID, shortID string) error {
 	defer u.mutex.Unlock()
 
 	// Проверяем, существует ли запись
-	idx, ok := u.idxShortID.Get(app.UrlShortener{ShortID: shortID})
+	idx, ok := u.idxShortID.Get(apptypes.UrlShortener{ShortID: shortID})
 	if !ok {
 		return ErrRecordNotFound
 	}
@@ -152,9 +160,12 @@ func (u *Urls) Delete(userID, shortID string) error {
 	// Помечаем ключ как удаленный
 	u.Records[idx].Deleted = 1
 
-	// Удаляем запись из индексов
-	u.idxShortID.Delete(u.Records[idx])
-	u.idxUserIDOriginalURL.Delete(u.Records[idx])
+	// // TODO:?  Удаляем запись из индексов
+	// u.idxShortID.Delete(u.Records[idx])
+	// u.idxUserIDOriginalURL.Delete(u.Records[idx])
+
+	// Сохраняем запись в файловое хранилище
+	filestorage.DumpRecords(u.Records)
 
 	return nil
 }
