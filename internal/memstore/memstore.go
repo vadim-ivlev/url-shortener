@@ -95,46 +95,46 @@ func (u *Urls) Add(record apptypes.URLShortener) (addedRecord apptypes.URLShorte
 	return record, true, nil
 }
 
-// GetByShortID возвращает запись по shortID.
-//
-// Параметры:
-// - shortID - shortID записи.
-//
-// Возвращает:
-// - запись, если она найдена или nil
-// - ошибку, если запись не найдена.
-func (u *Urls) GetByShortID(shortID string) (record *apptypes.URLShortener, err error) {
-	u.mutex.Lock()
-	defer u.mutex.Unlock()
+// // GetByShortID возвращает запись по shortID.
+// //
+// // Параметры:
+// // - shortID - shortID записи.
+// //
+// // Возвращает:
+// // - запись, если она найдена или nil
+// // - ошибку, если запись не найдена.
+// func (u *Urls) GetByShortID(shortID string) (record *apptypes.URLShortener, err error) {
+// 	u.mutex.Lock()
+// 	defer u.mutex.Unlock()
 
-	idx, ok := u.idxShortID.Get(apptypes.URLShortener{ShortID: shortID})
-	if !ok {
-		return nil, ErrRecordNotFound
-	}
+// 	idx, ok := u.idxShortID.Get(apptypes.URLShortener{ShortID: shortID})
+// 	if !ok {
+// 		return nil, ErrRecordNotFound
+// 	}
 
-	return &u.Records[idx], nil
-}
+// 	return &u.Records[idx], nil
+// }
 
-// GetByUserID возвращает все записи пользователя.
-//
-// Параметры:
-// - userID - идентификатор пользователя.
-//
-// Возвращает:
-// - массив записей пользователя.
-func (u *Urls) GetByUserID(userID string) (records []apptypes.URLShortener) {
-	u.mutex.Lock()
-	defer u.mutex.Unlock()
+// // GetByUserID возвращает все записи пользователя.
+// //
+// // Параметры:
+// // - userID - идентификатор пользователя.
+// //
+// // Возвращает:
+// // - массив записей пользователя.
+// func (u *Urls) GetByUserID(userID string) (records []apptypes.URLShortener) {
+// 	u.mutex.Lock()
+// 	defer u.mutex.Unlock()
 
-	result := make([]apptypes.URLShortener, 0)
-	for _, record := range u.Records {
-		if record.UserID == userID {
-			result = append(result, record)
-		}
-	}
+// 	result := make([]apptypes.URLShortener, 0)
+// 	for _, record := range u.Records {
+// 		if record.UserID == userID {
+// 			result = append(result, record)
+// 		}
+// 	}
 
-	return result
-}
+// 	return result
+// }
 
 // Delete - делает пометку записи как удаленную.
 // Удалить ключ может только пользователь его создавший.
