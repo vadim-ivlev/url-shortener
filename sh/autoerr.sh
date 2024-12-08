@@ -1,3 +1,3 @@
 #!/bin/bash
 
-sh/autotest.sh | grep -E 'Inc|FAIL'
+sh/autotest.sh  $@ | grep -E 'Inc|FAIL'

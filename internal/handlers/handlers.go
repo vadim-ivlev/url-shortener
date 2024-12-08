@@ -396,9 +396,9 @@ func APIUserURLsHandler(w http.ResponseWriter, r *http.Request) {
 	// Получить все короткие URL пользователя
 	// urls := app.GetUserURLs(userID)
 	records := memstore.Store.GetByUserID(userID)
-	urls := map[string]string{}
+	urls := []map[string]string{}
 	for _, record := range records {
-		urls[record.ShortID] = record.OriginalURL
+		urls = append(urls, map[string]string{"short_url": app.ShortURL(record.ShortID), "original_url": record.OriginalURL})
 	}
 
 	// Подготовливаем тело ответа
