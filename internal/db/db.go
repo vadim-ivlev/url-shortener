@@ -82,7 +82,7 @@ func AddRecord(record apptypes.UrlShortener) error {
 		return errors.New("AddRecord. No connection to DB")
 	}
 
-	_, err := DB.Exec("INSERT INTO urls (short_id, original_url) VALUES ($1, $2)", record.ShortID, record.OriginalURL)
+	_, err := DB.Exec("INSERT INTO urls1 (idx, short_id, original_url, user_id, deleted) VALUES ($1, $2, $3, $4, $5)", record.Idx, record.ShortID, record.OriginalURL, record.UserID, record.Deleted)
 	return err
 }
 

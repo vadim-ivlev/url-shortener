@@ -2,15 +2,20 @@ package memstore
 
 import (
 	"fmt"
+
 	"sync"
 
 	"errors"
 
+	"github.com/rs/zerolog/log"
 	"github.com/vadim-ivlev/url-shortener/internal/apptypes"
 	"github.com/vadim-ivlev/url-shortener/internal/db"
 	"github.com/vadim-ivlev/url-shortener/internal/filestorage"
 	"github.com/vadim-ivlev/url-shortener/internal/shortener"
 )
+
+// Store - хранилище Urls.
+var Store *Urls = NewUrls()
 
 var ErrRecordNotFound = errors.New("record not found")
 
@@ -82,7 +87,10 @@ func (u *Urls) Add(record apptypes.UrlShortener) (addedRecord apptypes.UrlShorte
 	filestorage.AddRecord(record)
 
 	// Сохраняем в базу данных
-	db.AddRecord(record)
+	err1 := db.AddRecord(record)
+	if err1 != nil {
+		log.Error().Err(err1).Msg("AddRecord")
+	}
 
 	return record, true, nil
 }

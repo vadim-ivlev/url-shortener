@@ -11,8 +11,10 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog/log"
 	"github.com/vadim-ivlev/url-shortener/internal/app"
+	"github.com/vadim-ivlev/url-shortener/internal/apptypes"
 	"github.com/vadim-ivlev/url-shortener/internal/auth"
 	"github.com/vadim-ivlev/url-shortener/internal/db"
+	"github.com/vadim-ivlev/url-shortener/internal/memstore"
 	"github.com/vadim-ivlev/url-shortener/internal/shortener"
 	"github.com/vadim-ivlev/url-shortener/internal/storage"
 )
@@ -57,6 +59,7 @@ func ShortenURLHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Сгенерировать короткий id и сохранить его
+	memstore.Store.Add(apptypes.UrlShortener{OriginalURL: originalURL, UserID: userID})
 	shortURL, aNewOne, err := generateAndSaveShortURL(ctx, app.JoinUserAndURL(userID, originalURL))
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -177,6 +180,7 @@ func APIShortenHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Сгенерировать короткий id и сохранить его
+	memstore.Store.Add(apptypes.UrlShortener{OriginalURL: originalURL, UserID: userID})
 	shortURL, aNewOne, err := generateAndSaveShortURL(ctx, app.JoinUserAndURL(userID, originalURL))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -310,6 +314,7 @@ func APIShortenBatchHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		// Сгенерировать короткий id и сохранить его в хранилище и в БД
+		memstore.Store.Add(apptypes.UrlShortener{OriginalURL: originalURL, UserID: userID})
 		shortURL, _, err := generateAndSaveShortURL(ctx, app.JoinUserAndURL(userID, originalURL))
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)

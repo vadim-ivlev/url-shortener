@@ -28,12 +28,12 @@ func AddRecord(record apptypes.UrlShortener) error {
 	}
 
 	// Создаем директорию для файла хранилища, если ее нет
-	if err := createDirIfNotExists(config.Params.FileStoragePath); err != nil {
+	if err := createDirIfNotExists(config.Params.FileStoragePath + "1"); err != nil {
 		return err
 	}
 
 	// Открываем файл для записи (добавляем в конец файла) или создаем новый
-	file, err := os.OpenFile(config.Params.FileStoragePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(config.Params.FileStoragePath+"1", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
@@ -43,7 +43,7 @@ func AddRecord(record apptypes.UrlShortener) error {
 	if _, err := file.Write(append(recordJSON, '\n')); err != nil {
 		return err
 	}
-	log.Info().Msgf("Record saved to filestorage: %s in file %s", recordJSON, config.Params.FileStoragePath)
+	log.Info().Msgf("Record saved to filestorage: %s in file %s", recordJSON, config.Params.FileStoragePath+"1")
 	return nil
 }
 
