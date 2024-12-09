@@ -176,9 +176,10 @@ func DeleteKeys(ctx context.Context, userID string, keys []any) error {
 	}
 
 	// готовим запрос для обновления записей
+
 	query := `UPDATE urls 
-	SET short_id = '-' || short_id 
-	WHERE original_url LIKE $1 || '@%' 
+	SET deleted = 1 
+	WHERE user_id = $1 
 	AND short_id IN ` + generateDollarSigns(len(keys), 2)
 
 	// готовим аргументы для запроса
