@@ -133,30 +133,8 @@ func GetRecords(ctx context.Context) (data []apptypes.URLShortener, err error) {
 	if !IsConnected() {
 		return nil, errors.New("GetData. No connection to DB")
 	}
-
-	rows, err := DB.QueryxContext(ctx, "SELECT idx, short_id, original_url, user_id, deleted FROM urls")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	if rows.Err() != nil {
-		return nil, rows.Err()
-	}
-
-	data = make([]apptypes.URLShortener, 0)
-
-	for rows.Next() {
-		var record apptypes.URLShortener
-		err = rows.Scan(&record.Idx, &record.ShortID, &record.OriginalURL, &record.UserID, &record.Deleted)
-		if err != nil {
-			log.Warn().Err(err).Msg("GetData Cannot scan row")
-			continue
-		}
-		data = append(data, record)
-	}
-
-	return data, nil
+	err = DB.GetContext(ctx, &data, "SELECT idx, short_id, original_url, user_id, deleted FROM urls")
+	return data, err
 }
 
 // generateDollarSigns - генерирует строку вида "$1, $2, $3, ...",
