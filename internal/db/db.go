@@ -186,13 +186,14 @@ func DeleteKeys(ctx context.Context, userID string, keys []any) error {
 	args = append(args, userID)
 	args = append(args, keys...)
 
-	// выполняем запрос
-	// // Check if ctx canceled
-	// ctx, cancel := context.WithCancel(ctx)
-	// defer cancel()
+	res, err := DB.Exec(query, args...)
 
-	// _, err := DB.ExecContext(ctx, query, args...)
-	_, err := DB.Exec(query, args...)
-	// log.Info().Msgf("*********************************")
+	// Печатаем результат запроса
+	rowsAffected, err0 := res.RowsAffected()
+	if err0 != nil {
+		log.Error().Err(err0).Msg("DeleteKeys. RowsAffected error")
+	}
+	log.Info().Msgf("DeleteKeys. %d rows affected", rowsAffected)
+
 	return err
 }
