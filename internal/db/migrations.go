@@ -21,7 +21,8 @@ import (
 func MigrateUp(dirname string) error {
 	files, err := os.ReadDir(dirname)
 	if err != nil {
-		log.Error().Err(err).Msg("MigrateUp error in directory")
+		dir, _ := os.Getwd()
+		log.Error().Err(err).Msgf("MigrateUp error in current directory %s", dir)
 		return err
 	}
 	return executeSQLFiles(files, dirname, ".up.sql")

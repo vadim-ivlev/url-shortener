@@ -15,6 +15,11 @@ import (
 // LoadFileDataToStorage - загружает данные из файлового хранилища в storage.
 // Возвращает ошибку.
 func LoadFileDataToStorage() (err error) {
+	// Проверяем нужно ли загружать данные из файлового хранилища
+	if !config.UseFileStorage() {
+		return nil
+	}
+
 	// Открываем файл для чтения
 	file, err := os.OpenFile(config.Params.FileStoragePath, os.O_RDONLY|os.O_CREATE, 0644)
 	if err != nil {

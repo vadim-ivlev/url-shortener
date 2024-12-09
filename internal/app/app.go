@@ -37,11 +37,24 @@ func InitApp() {
 	// Выполнить миграции базы данных
 	db.MigrateUp("./migrations")
 
-	// Загрузить данные из базы данных или из файлового хранилища в storage
-	err := LoadDataToStorage(context.Background())
+	// // Загрузить данные из базы данных или из файлового хранилища
+	// err := LoadDataToStorage(context.Background())
+	// if err != nil {
+	// 	log.Warn().Err(err).Msg("Cannot load data to storage")
+	// }
+
+	// Загрузить данные из файлового хранилища
+	err := LoadFileDataToStorage()
 	if err != nil {
 		log.Warn().Err(err).Msg("Cannot load data to storage")
 	}
+
+	// Загрузить данные из базы данных
+	err = LoadDBDataToStorage(context.Background())
+	if err != nil {
+		log.Warn().Err(err).Msg("Cannot load data to storage")
+	}
+
 	// Печать содержимого хранилища в лог
 	memstore.Store.PrintContent(5)
 }
@@ -56,24 +69,24 @@ func ShortID(shortURL string) string {
 	return strings.TrimPrefix(shortURL, config.Params.BaseURL+"/")
 }
 
-// LoadDataToStorage - загружает данные из базы данных или из файлового хранилища в storage.
-// Если указана DatabaseDSN в конфигурации, то загрузить данные из базы данных.
-// В противном случае, если указан FileStoragePath в конфигурации, то загрузить данные из файлового хранилища.
-// Если ни один из параметров не указан, то ничего не загружать.
-// Параметры:
-// - ctx - контекст
-// Возвращает ошибку, если загрузка данных не удалась.
-func LoadDataToStorage(ctx context.Context) (err error) {
-	switch {
-	case config.Params.DatabaseDSN != "":
-		err = LoadDBDataToStorage(ctx)
-	case config.Params.FileStoragePath != "":
-		err = LoadFileDataToStorage()
-	default:
-		log.Info().Msg("LoadData(). No persistent data store specified")
-	}
-	return err
-}
+// // LoadDataToStorage - загружает данные из базы данных или из файлового хранилища в storage.
+// // Если указана DatabaseDSN в конфигурации, то загрузить данные из базы данных.
+// // В противном случае, если указан FileStoragePath в конфигурации, то загрузить данные из файлового хранилища.
+// // Если ни один из параметров не указан, то ничего не загружать.
+// // Параметры:
+// // - ctx - контекст
+// // Возвращает ошибку, если загрузка данных не удалась.
+// func LoadDataToStorage(ctx context.Context) (err error) {
+// 	switch {
+// 	case config.Params.DatabaseDSN != "":
+// 		err = LoadDBDataToStorage(ctx)
+// 	case config.Params.FileStoragePath != "":
+// 		err = LoadFileDataToStorage()
+// 	default:
+// 		log.Info().Msg("LoadData(). No persistent data store specified")
+// 	}
+// 	return err
+// }
 
 // // AddToStore сохраняет короткий и оригинальный URL в базу данных или в файловое хранилище.
 // // Если указана DatabaseDSN в конфигурации, то сохранять данные в базу данных.
@@ -172,14 +185,17 @@ func DumpDataToFilestorage() error {
 	if config.Params.FileStoragePath == "" {
 		return nil
 	}
+
 	filestorage.Clear()
-	storageData := storage.GetData()
-	for recordShortID, recordValue := range storageData {
-		err := filestorage.Store(recordShortID, recordValue)
+
+	memstoreRecords := memstore.Store.Records
+	for _, record := range memstoreRecords {
+		err := filestorage.AddRecord(record)
 		if err != nil {
 			log.Warn().Err(err).Msg("Cannot save shortened url in the filestorage")
 			return err
 		}
 	}
+
 	return nil
 }

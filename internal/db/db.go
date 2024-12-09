@@ -52,20 +52,6 @@ func IsConnected() bool {
 	return DB != nil && DB.Ping() == nil
 }
 
-// // Store - сохраняет данные в базу данных.
-// // Параметры:
-// // - ctx - контекст
-// // - shortID - укороченный ID.
-// // - originalURL - оригинальный URL.
-// // Возвращает ошибку, если запись не удалась.
-// func Store(ctx context.Context, shortID, originalURL string) error {
-// 	if !IsConnected() {
-// 		return errors.New("Store. No connection to DB")
-// 	}
-// 	_, err := DB.ExecContext(ctx, "INSERT INTO urls (short_id, original_url) VALUES ($1, $2)", shortID, originalURL)
-// 	return err
-// }
-
 // AddRecord - добавляет запись в базу данных.
 //
 // Параметры:
@@ -121,16 +107,34 @@ func Clear() error {
 	return err
 }
 
-// GetData - возвращает данные из базы данных в виде map[string]string,
-// где ключ - short_id, значение - original_url.
+// GetByShortID - возвращает запись из базы данных по short_id.
+//
 // Параметры:
 // - ctx - контекст
-func GetData(ctx context.Context) (data map[string]string, err error) {
+// - shortID - короткий идентификатор
+//
+// Возвращает запись apptypes.URLShortener и ошибку.
+func GetByShortID(ctx context.Context, shortID string) (record apptypes.URLShortener, err error) {
+	if !IsConnected() {
+		return record, errors.New("GetByShortID. No connection to DB")
+	}
+
+	err = DB.GetContext(ctx, &record, "SELECT idx, short_id, original_url, user_id, deleted FROM urls WHERE short_id = $1", shortID)
+	return record, err
+}
+
+// GetRecords - возвращает данные из базы данных в виде массива apptypes.URLShortener.
+//
+// Параметры:
+// - ctx - контекст
+//
+// Возвращает массив apptypes.URLShortener и ошибку.
+func GetRecords(ctx context.Context) (data []apptypes.URLShortener, err error) {
 	if !IsConnected() {
 		return nil, errors.New("GetData. No connection to DB")
 	}
 
-	rows, err := DB.QueryxContext(ctx, "SELECT short_id, original_url FROM urls")
+	rows, err := DB.QueryxContext(ctx, "SELECT idx, short_id, original_url, user_id, deleted FROM urls")
 	if err != nil {
 		return nil, err
 	}
@@ -140,16 +144,16 @@ func GetData(ctx context.Context) (data map[string]string, err error) {
 		return nil, rows.Err()
 	}
 
-	data = make(map[string]string)
+	data = make([]apptypes.URLShortener, 0)
 
 	for rows.Next() {
-		var shortID, originalURL string
-		err = rows.Scan(&shortID, &originalURL)
+		var record apptypes.URLShortener
+		err = rows.Scan(&record.Idx, &record.ShortID, &record.OriginalURL, &record.UserID, &record.Deleted)
 		if err != nil {
 			log.Warn().Err(err).Msg("GetData Cannot scan row")
 			continue
 		}
-		data[shortID] = originalURL
+		data = append(data, record)
 	}
 
 	return data, nil

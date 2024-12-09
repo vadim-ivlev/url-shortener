@@ -108,6 +108,26 @@ func (u *Urls) Add(record apptypes.URLShortener) (addedRecord apptypes.URLShorte
 	return record, true, nil
 }
 
+// AddRecords добавляет массив записей в хранилище.
+//
+// Параметры:
+// - records - массив записей для добавления.
+//
+// Возвращает:
+// - количество добавленных записей.
+// - массив ошибок для записей которые не удалось добавить.
+func (u *Urls) AddRecords(records []apptypes.URLShortener) (numAdded int, errs []error) {
+	for _, record := range records {
+		_, _, err := u.Add(record)
+		if err != nil {
+			errs = append(errs, err)
+		} else {
+			numAdded++
+		}
+	}
+	return numAdded, errs
+}
+
 // GetByShortID возвращает запись по shortID.
 //
 // Параметры:

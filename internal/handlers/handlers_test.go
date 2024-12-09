@@ -408,23 +408,23 @@ func TestAPIShortenBatchHandler(t *testing.T) {
 				assert.Equal(t, inputRecord.CorrelationID, outputRecords[i].CorrelationID)
 			}
 
-			// Проверка наличия записей в БД
-			dbData, err := db.GetData(context.Background())
-			if err != nil {
-				log.Error().Err(err).Msg("Error")
-				return
-			}
-			log.Info().Msgf("DB data: %v", PrettyString(dbData))
 			for _, responseRecord := range outputRecords {
 				shortID := app.ShortID(responseRecord.ShortURL)
 				// пустые shortID в базе данных не проверяем
 				if shortID == "" {
 					continue
 				}
-				originalURL, ok := dbData[shortID]
-				assert.True(t, ok)
-				log.Info().Msgf("DB record. ShortID: %v OriginalURL: %v", shortID, originalURL)
+				var found bool
+
+				// найти shortID в базе данных
+				_, err := db.GetByShortID(context.Background(), shortID)
+				if err == nil {
+					found = true
+				}
+
+				assert.True(t, found)
 			}
+
 		})
 	}
 }

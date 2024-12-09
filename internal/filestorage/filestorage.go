@@ -9,18 +9,11 @@
 package filestorage
 
 import (
-	"encoding/json"
 	"os"
 	"path/filepath"
 
 	"github.com/vadim-ivlev/url-shortener/internal/config"
 )
-
-// FileStorageRecord - структура для хранения записи в файловом хранилище.
-type FileStorageRecord struct {
-	ShortID     string `json:"short_id"`
-	OriginalURL string `json:"original_url"`
-}
 
 // createDirIfNotExists - создает директорию в которой будет храниться файл хранилища, если ее нет.
 // Параметры:
@@ -32,44 +25,6 @@ func createDirIfNotExists(filePath string) error {
 			return err
 		}
 	}
-	return nil
-}
-
-// Store - сохраняет данные в файловое хранилище.
-// Параметры:
-// - shortID - укороченный ID.
-// - originalURL - оригинальный URL.
-// Возвращает ошибку, если запись не удалась.
-func Store(shortID, originalURL string) error {
-	// Создаем новую запись
-	record := FileStorageRecord{
-		ShortID:     shortID,
-		OriginalURL: originalURL,
-	}
-
-	// Преобразуем запись в JSON
-	recordJSON, err := json.Marshal(record)
-	if err != nil {
-		return err
-	}
-
-	// Создаем директорию для файла хранилища, если ее нет
-	if err := createDirIfNotExists(config.Params.FileStoragePath); err != nil {
-		return err
-	}
-
-	// Открываем файл для записи (добавляем в конец файла) или создаем новый
-	file, err := os.OpenFile(config.Params.FileStoragePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	// Записываем recordJSON  в файл
-	if _, err := file.Write(append(recordJSON, '\n')); err != nil {
-		return err
-	}
-	// log.Info().Msgf("Record saved to filestorage: %s in file %s", recordJSON, config.Params.FileStoragePath)
 	return nil
 }
 
