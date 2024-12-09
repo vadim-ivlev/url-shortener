@@ -107,13 +107,17 @@ func UpdateRecord(record apptypes.URLShortener) error {
 }
 
 // Clear - очищает таблицу urls
-// - ctx - контекст
+//
 // Возвращает ошибку, если очистка не удалась.
-func Clear(ctx context.Context) error {
+func Clear() error {
+	if !config.UseDatabase() {
+		return nil
+	}
+
 	if !IsConnected() {
 		return errors.New("Clear. No connection to DB")
 	}
-	_, err := DB.ExecContext(ctx, "DELETE FROM urls")
+	_, err := DB.Exec("DELETE FROM urls")
 	return err
 }
 

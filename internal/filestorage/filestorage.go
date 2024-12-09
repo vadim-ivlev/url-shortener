@@ -75,5 +75,8 @@ func Store(shortID, originalURL string) error {
 
 // Clear - очищает файловое хранилище.
 func Clear() error {
+	if !config.UseFileStorage() {
+		return nil
+	}
 	return os.Remove(config.Params.FileStoragePath)
 }

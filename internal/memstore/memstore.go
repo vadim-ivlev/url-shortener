@@ -44,11 +44,21 @@ func idxUserIDOriginalURLKeyFunc(record apptypes.URLShortener) string {
 
 // NewUrls создает новое хранилище Urls.
 func NewUrls() *Urls {
+	// очищаем файловое хранилище
+	filestorage.Clear()
+	// очищаем базу данных
+	db.Clear()
+
 	return &Urls{
 		Records:              make([]apptypes.URLShortener, 0),
 		idxShortID:           NewIndex(idxShortIDKeyFunc),
 		idxUserIDOriginalURL: NewIndex(idxUserIDOriginalURLKeyFunc),
 	}
+}
+
+// Clear очищает хранилище.
+func Clear() {
+	Store = NewUrls()
 }
 
 // Add добавляет запись в хранилище.

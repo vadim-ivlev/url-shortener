@@ -14,12 +14,13 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/vadim-ivlev/url-shortener/internal/app"
+	"github.com/vadim-ivlev/url-shortener/internal/apptypes"
 	"github.com/vadim-ivlev/url-shortener/internal/auth"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
 	"github.com/vadim-ivlev/url-shortener/internal/db"
 	"github.com/vadim-ivlev/url-shortener/internal/logger"
+	"github.com/vadim-ivlev/url-shortener/internal/memstore"
 	"github.com/vadim-ivlev/url-shortener/internal/shortener"
-	"github.com/vadim-ivlev/url-shortener/internal/storage"
 )
 
 func skipCI(t *testing.T) {
@@ -119,7 +120,7 @@ func TestShortenURLHandler(t *testing.T) {
 	skipCI(t)
 
 	// Очищаем хранилище
-	storage.Clear()
+	memstore.Clear()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -134,14 +135,15 @@ func TestShortenURLHandler(t *testing.T) {
 			assert.Contains(t, rec.Header().Get("Content-Type"), tt.want.contentType)
 		})
 	}
-	storage.PrintContent(3)
+
+	memstore.Store.PrintContent(3)
 }
 
 func TestAPIShortenHandler(t *testing.T) {
 	skipCI(t)
 
 	// Очищаем хранилище
-	storage.Clear()
+	memstore.Clear()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -157,7 +159,8 @@ func TestAPIShortenHandler(t *testing.T) {
 			fmt.Printf("Content-Type: %v\n", rec.Header().Get("Content-Type"))
 		})
 	}
-	storage.PrintContent(3)
+
+	memstore.Store.PrintContent(3)
 }
 
 func TestRedirectHandler(t *testing.T) {
@@ -287,14 +290,14 @@ func TestAPIShortenBatchHandler(t *testing.T) {
 	}
 
 	// Очистим базу данных
-	err = db.Clear(context.Background())
+	err = db.Clear()
 	if err != nil {
 		log.Error().Err(err).Msg("Error")
 		return
 	}
 
 	// Очистим сторадж
-	storage.Clear()
+	memstore.Clear()
 
 	// Тестовые входные данные
 	var emptyInput []inpRec = nil
@@ -492,12 +495,11 @@ func TestAPIUserURLsHandler(t *testing.T) {
 	for _, tt := range testsU {
 		t.Run(tt.name, func(t *testing.T) {
 			// Очистить хранилище
-			storage.Clear()
+			memstore.Clear()
 
 			// Добавить записи в хранилище
 			for shortID, originalURL := range tt.args.inputRecords {
-				userAndURL := app.JoinUserAndURL(userID, originalURL)
-				storage.Set(shortID, userAndURL)
+				memstore.Store.Add(apptypes.URLShortener{ShortID: shortID, OriginalURL: originalURL, UserID: userID})
 			}
 
 			req := httptest.NewRequest(http.MethodGet, "/api/user/urls", nil)
