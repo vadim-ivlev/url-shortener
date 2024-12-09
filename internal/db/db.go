@@ -185,6 +185,10 @@ func generateDollarSigns(n int, start int) string {
 // - keys - массив ключей
 // Возвращает ошибку, если удаление не удалось.
 func DeleteKeys(ctx context.Context, userID string, keys []any) error {
+	if !config.UseDatabase() {
+		return nil
+	}
+
 	if !IsConnected() {
 		return errors.New("DeleteKeys. No connection to DB")
 	}

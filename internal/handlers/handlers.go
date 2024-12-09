@@ -14,8 +14,8 @@ import (
 	"github.com/vadim-ivlev/url-shortener/internal/apptypes"
 	"github.com/vadim-ivlev/url-shortener/internal/auth"
 	"github.com/vadim-ivlev/url-shortener/internal/db"
+	"github.com/vadim-ivlev/url-shortener/internal/filestorage"
 	"github.com/vadim-ivlev/url-shortener/internal/memstore"
-	"github.com/vadim-ivlev/url-shortener/internal/storage"
 )
 
 // // generateAndSaveShortURL - генерирует короткий URL и сохраняет его в хранилище.
@@ -499,25 +499,26 @@ func APIDeleteURLsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Удалить короткие URL
-	go deleteKeys(ctx, userID, ids)
+	go deleteShortIDs(ctx, userID, ids)
 
 	w.WriteHeader(http.StatusAccepted)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(`{"status":"Accepted"}`))
 }
 
-// deleteKeys - удаляет короткие URL из хранилища в RAM и из базы данных.
-func deleteKeys(ctx context.Context, userID string, ids []any) error {
+// deleteShortIDs - удаляет короткие URL из хранилища в RAM и из посоянных хранилищ.
+func deleteShortIDs(ctx context.Context, userID string, ids []any) (err error) {
 	memstore.Store.DeleteShortIDs(userID, ids)
-	err := storage.DeleteKeys(userID, ids)
+
+	err = db.DeleteKeys(ctx, userID, ids)
 	if err != nil {
-		log.Warn().Err(err).Msg("APIDeleteURLsHandler> Cannot delete shortIDs from RAM")
-		return err
+		log.Warn().Err(err).Msg("Cannot delete shortID from the database")
 	}
 
-	err = app.DeleteKeysFromStore(ctx, userID, ids)
+	memstoreRecords := memstore.Store.Records
+	err = filestorage.DumpRecords(memstoreRecords)
 	if err != nil {
-		log.Warn().Err(err).Msg("APIDeleteURLsHandler> Cannot delete shortIDs from the database")
+		log.Warn().Err(err).Msg("Cannot save data to filestorage")
 	}
 
 	return nil

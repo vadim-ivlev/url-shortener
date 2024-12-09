@@ -15,7 +15,7 @@ import (
 )
 
 // Store - хранилище Urls.
-var Store *Urls = NewUrls()
+var Store *Urls = NewStore()
 
 var ErrRecordNotFound = errors.New("record not found")
 
@@ -42,8 +42,8 @@ func idxUserIDOriginalURLKeyFunc(record apptypes.URLShortener) string {
 	return record.UserID + "@" + record.OriginalURL
 }
 
-// NewUrls создает новое хранилище Urls.
-func NewUrls() *Urls {
+// NewStore создает новое хранилище Urls.
+func NewStore() *Urls {
 	// очищаем файловое хранилище
 	filestorage.Clear()
 	// очищаем базу данных
@@ -58,7 +58,7 @@ func NewUrls() *Urls {
 
 // Clear очищает хранилище.
 func Clear() {
-	Store = NewUrls()
+	Store = NewStore()
 }
 
 // Add добавляет запись в хранилище.
