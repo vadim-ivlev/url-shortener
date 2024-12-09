@@ -110,7 +110,8 @@ func CorrectShortURLs(userID string) {
 		if tt.url == "" {
 			continue
 		}
-		userAndURL := app.JoinUserAndURL(userID, tt.url)
+		// userAndURL := app.JoinUserAndURL(userID, tt.url)
+		userAndURL := userID + "@" + tt.url
 		shortID := shortener.Shorten(userAndURL)
 		tests[i].want.shortURL = config.Params.BaseURL + "/" + shortID
 	}

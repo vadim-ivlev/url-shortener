@@ -132,11 +132,11 @@ func LoadDataToStorage(ctx context.Context) (err error) {
 // 	return urls
 // }
 
-// JoinUserAndURL - объединяет ID пользователя и URL.
-func JoinUserAndURL(userID, URL string) string {
-	// return URL
-	return userID + "@" + URL
-}
+// // JoinUserAndURL - объединяет ID пользователя и URL.
+// func JoinUserAndURL(userID, URL string) string {
+// 	// return URL
+// 	return userID + "@" + URL
+// }
 
 // SplitUserAndURL - разделяет ID пользователя и URL.
 // func SplitUserAndURL(userAndURL string) (userID, URL string) {
