@@ -52,19 +52,19 @@ func IsConnected() bool {
 	return DB != nil && DB.Ping() == nil
 }
 
-// Store - сохраняет данные в базу данных.
-// Параметры:
-// - ctx - контекст
-// - shortID - укороченный ID.
-// - originalURL - оригинальный URL.
-// Возвращает ошибку, если запись не удалась.
-func Store(ctx context.Context, shortID, originalURL string) error {
-	if !IsConnected() {
-		return errors.New("Store. No connection to DB")
-	}
-	_, err := DB.ExecContext(ctx, "INSERT INTO urls (short_id, original_url) VALUES ($1, $2)", shortID, originalURL)
-	return err
-}
+// // Store - сохраняет данные в базу данных.
+// // Параметры:
+// // - ctx - контекст
+// // - shortID - укороченный ID.
+// // - originalURL - оригинальный URL.
+// // Возвращает ошибку, если запись не удалась.
+// func Store(ctx context.Context, shortID, originalURL string) error {
+// 	if !IsConnected() {
+// 		return errors.New("Store. No connection to DB")
+// 	}
+// 	_, err := DB.ExecContext(ctx, "INSERT INTO urls (short_id, original_url) VALUES ($1, $2)", shortID, originalURL)
+// 	return err
+// }
 
 // AddRecord - добавляет запись в базу данных.
 //

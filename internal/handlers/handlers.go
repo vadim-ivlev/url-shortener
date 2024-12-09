@@ -15,31 +15,30 @@ import (
 	"github.com/vadim-ivlev/url-shortener/internal/auth"
 	"github.com/vadim-ivlev/url-shortener/internal/db"
 	"github.com/vadim-ivlev/url-shortener/internal/memstore"
-	"github.com/vadim-ivlev/url-shortener/internal/shortener"
 	"github.com/vadim-ivlev/url-shortener/internal/storage"
 )
 
-// generateAndSaveShortURL - генерирует короткий URL и сохраняет его в хранилище.
-// Параметры:
-// ctx - контекст
-// originalURL - оригинальный URL.
-// Возвращает:
-// shortURL - короткий URL
-// aNewOne -  флаг, новый ли это короткий URL. Если true, то это новый короткий URL.
-// err - ошибка.
-func generateAndSaveShortURL(ctx context.Context, originalURL string) (shortURL string, aNewOne bool, err error) {
-	// Сгенерировать короткий id
-	shortID := shortener.Shorten(originalURL)
-	// Cохранить короткий id в хранилище в RAM
-	savedID, aNewOne := storage.Set(shortID, originalURL)
+// // generateAndSaveShortURL - генерирует короткий URL и сохраняет его в хранилище.
+// // Параметры:
+// // ctx - контекст
+// // originalURL - оригинальный URL.
+// // Возвращает:
+// // shortURL - короткий URL
+// // aNewOne -  флаг, новый ли это короткий URL. Если true, то это новый короткий URL.
+// // err - ошибка.
+// func generateAndSaveShortURL(ctx context.Context, originalURL string) (shortURL string, aNewOne bool, err error) {
+// 	// Сгенерировать короткий id
+// 	shortID := shortener.Shorten(originalURL)
+// 	// Cохранить короткий id в хранилище в RAM
+// 	savedID, aNewOne := storage.Set(shortID, originalURL)
 
-	// Если это новый savedID, то есть aNewOne == true,
-	// то сохранить savedID и оригинальный URL в базу данных и/или в файловое хранилище
-	if aNewOne {
-		err = app.AddToStore(ctx, savedID, originalURL)
-	}
-	return app.ShortURL(savedID), aNewOne, err
-}
+// 	// Если это новый savedID, то есть aNewOne == true,
+// 	// то сохранить savedID и оригинальный URL в базу данных и/или в файловое хранилище
+// 	if aNewOne {
+// 		err = app.AddToStore(ctx, savedID, originalURL)
+// 	}
+// 	return app.ShortURL(savedID), aNewOne, err
+// }
 
 // ShortenURLHandler обрабатывает POST-запросы для создания короткого URL.
 func ShortenURLHandler(w http.ResponseWriter, r *http.Request) {

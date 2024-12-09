@@ -41,14 +41,14 @@ func Create() {
 	log.Info().Msg("storage initialized")
 }
 
-// Clear очищает хранилище.
-func Clear() {
-	dm = &DoubleMap{
-		valueToKey: make(map[string]string),
-		keyToValue: make(map[string]string),
-	}
-	log.Info().Msg("storage cleared")
-}
+// // Clear очищает хранилище.
+// func Clear() {
+// 	dm = &DoubleMap{
+// 		valueToKey: make(map[string]string),
+// 		keyToValue: make(map[string]string),
+// 	}
+// 	log.Info().Msg("storage cleared")
+// }
 
 // Set сохраняет ключ и значени в DoubleMap.
 // Сначала проверяется, существует ли значение уже в карте valueToKey. Если да, то возвращается существующий ключ.
@@ -78,30 +78,30 @@ func LoadData(data map[string]string) {
 	}
 }
 
-// Get возвращает значение для данного ключа.
-// Если ключ не найден, возвращается пустая строка.
-func Get(key string) (value string) {
-	dm.mutex.Lock()
-	defer dm.mutex.Unlock()
+// // Get возвращает значение для данного ключа.
+// // Если ключ не найден, возвращается пустая строка.
+// func Get(key string) (value string) {
+// 	dm.mutex.Lock()
+// 	defer dm.mutex.Unlock()
 
-	// Извлекаем значение
-	value = dm.keyToValue[key]
-	return value
-}
+// 	// Извлекаем значение
+// 	value = dm.keyToValue[key]
+// 	return value
+// }
 
-// PrintContent выводит содержимое хранилища в консоль.
-// limit - количество элементов, которые будут выведены.
-func PrintContent(limit int) {
-	log.Info().Msgf("RAM Storage contains %d records", len(dm.keyToValue))
-	n := 0
-	for k, v := range dm.keyToValue {
-		n++
-		if n > limit {
-			break
-		}
-		fmt.Printf("%4v %v %v\n", n, k, v)
-	}
-}
+// // PrintContent выводит содержимое хранилища в консоль.
+// // limit - количество элементов, которые будут выведены.
+// func PrintContent(limit int) {
+// 	log.Info().Msgf("RAM Storage contains %d records", len(dm.keyToValue))
+// 	n := 0
+// 	for k, v := range dm.keyToValue {
+// 		n++
+// 		if n > limit {
+// 			break
+// 		}
+// 		fmt.Printf("%4v %v %v\n", n, k, v)
+// 	}
+// }
 
 // GetData - возвращает данные  в виде map[string]string,
 // где ключ - short_id, значение - original_url.
@@ -172,9 +172,9 @@ func DeleteKeys(userID string, keys []any) error {
 	return nil
 }
 
-// IsDeletedKey - проверяет, является ли ключ удаленным.
-func IsDeletedKey(key string) bool {
-	deletedKey := "-" + key
-	_, exists := dm.keyToValue[deletedKey]
-	return exists
-}
+// // IsDeletedKey - проверяет, является ли ключ удаленным.
+// func IsDeletedKey(key string) bool {
+// 	deletedKey := "-" + key
+// 	_, exists := dm.keyToValue[deletedKey]
+// 	return exists
+// }

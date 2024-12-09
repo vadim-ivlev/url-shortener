@@ -43,7 +43,6 @@ func InitApp() {
 		log.Warn().Err(err).Msg("Cannot load data to storage")
 	}
 	// Печать содержимого хранилища в лог
-	// storage.PrintContent(5)
 	memstore.Store.PrintContent(5)
 }
 
@@ -76,62 +75,62 @@ func LoadDataToStorage(ctx context.Context) (err error) {
 	return err
 }
 
-// AddToStore сохраняет короткий и оригинальный URL в базу данных или в файловое хранилище.
-// Если указана DatabaseDSN в конфигурации, то сохранять данные в базу данных.
-// В противном случае, если указан FileStoragePath в конфигурации, то сохранять данные в файловое хранилище.
-// Если ни один из параметров не указан, то ничего не сохранять.
-// Параметры:
-// - ctx - контекст
-// - shortID - короткий ID
-// - originalURL - оригинальный URL
-// Возвращает ошибку, если сохранение не удалось.
-func AddToStore(ctx context.Context, shortID, originalURL string) (err error) {
-	switch {
-	case config.Params.DatabaseDSN != "":
-		// сохранить shortID и оригинальный URL в базу данных
-		err = db.Store(ctx, shortID, originalURL)
-		if err != nil {
-			log.Warn().Err(err).Msg("Cannot save shortID in the database")
-			return err
-		}
-	case config.Params.FileStoragePath != "":
-		// сохранить shortID и оригинальный URL в файловое хранилище
-		err := filestorage.Store(shortID, originalURL)
-		if err != nil {
-			log.Warn().Err(err).Msg("Cannot save shortened url in the filestorage")
-			return err
-		}
-	default:
-		log.Info().Msg("AddToStore(). No persistent data store specified")
-	}
-	return nil
-}
+// // AddToStore сохраняет короткий и оригинальный URL в базу данных или в файловое хранилище.
+// // Если указана DatabaseDSN в конфигурации, то сохранять данные в базу данных.
+// // В противном случае, если указан FileStoragePath в конфигурации, то сохранять данные в файловое хранилище.
+// // Если ни один из параметров не указан, то ничего не сохранять.
+// // Параметры:
+// // - ctx - контекст
+// // - shortID - короткий ID
+// // - originalURL - оригинальный URL
+// // Возвращает ошибку, если сохранение не удалось.
+// func AddToStore(ctx context.Context, shortID, originalURL string) (err error) {
+// 	switch {
+// 	case config.Params.DatabaseDSN != "":
+// 		// сохранить shortID и оригинальный URL в базу данных
+// 		err = db.Store(ctx, shortID, originalURL)
+// 		if err != nil {
+// 			log.Warn().Err(err).Msg("Cannot save shortID in the database")
+// 			return err
+// 		}
+// 	case config.Params.FileStoragePath != "":
+// 		// сохранить shortID и оригинальный URL в файловое хранилище
+// 		err := filestorage.Store(shortID, originalURL)
+// 		if err != nil {
+// 			log.Warn().Err(err).Msg("Cannot save shortened url in the filestorage")
+// 			return err
+// 		}
+// 	default:
+// 		log.Info().Msg("AddToStore(). No persistent data store specified")
+// 	}
+// 	return nil
+// }
 
-// GetUserURLs возвращает пользователю все когда-либо сокращённые им `URL` в формате:
-// ```json
-// [
-//
-//	{
-//	    "short_url": "http://...",
-//	    "original_url": "http://..."
-//	},
-//	...
-//
-// ]
-func GetUserURLs(userID string) (urls []map[string]string) {
-	urls = make([]map[string]string, 0)
-	// Получить данные из хранилища
-	storageData := storage.GetData()
-	for recordShortID, recordValue := range storageData {
+// // GetUserURLs возвращает пользователю все когда-либо сокращённые им `URL` в формате:
+// // ```json
+// // [
+// //
+// //	{
+// //	    "short_url": "http://...",
+// //	    "original_url": "http://..."
+// //	},
+// //	...
+// //
+// // ]
+// func GetUserURLs(userID string) (urls []map[string]string) {
+// 	urls = make([]map[string]string, 0)
+// 	// Получить данные из хранилища
+// 	storageData := storage.GetData()
+// 	for recordShortID, recordValue := range storageData {
 
-		recordUserID, RecordOriginalURL := SplitUserAndURL(recordValue)
-		if recordUserID != userID {
-			continue
-		}
-		urls = append(urls, map[string]string{"short_url": ShortURL(recordShortID), "original_url": RecordOriginalURL})
-	}
-	return urls
-}
+// 		recordUserID, RecordOriginalURL := SplitUserAndURL(recordValue)
+// 		if recordUserID != userID {
+// 			continue
+// 		}
+// 		urls = append(urls, map[string]string{"short_url": ShortURL(recordShortID), "original_url": RecordOriginalURL})
+// 	}
+// 	return urls
+// }
 
 // JoinUserAndURL - объединяет ID пользователя и URL.
 func JoinUserAndURL(userID, URL string) string {
@@ -140,13 +139,13 @@ func JoinUserAndURL(userID, URL string) string {
 }
 
 // SplitUserAndURL - разделяет ID пользователя и URL.
-func SplitUserAndURL(userAndURL string) (userID, URL string) {
-	parts := strings.Split(userAndURL, "@")
-	if len(parts) != 2 {
-		return "", ""
-	}
-	return parts[0], parts[1]
-}
+// func SplitUserAndURL(userAndURL string) (userID, URL string) {
+// 	parts := strings.Split(userAndURL, "@")
+// 	if len(parts) != 2 {
+// 		return "", ""
+// 	}
+// 	return parts[0], parts[1]
+// }
 
 func DeleteKeysFromStore(ctx context.Context, userID string, keys []any) error {
 	// Пометить keys как удаленные в базе данных
