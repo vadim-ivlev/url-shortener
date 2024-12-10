@@ -1,11 +1,14 @@
 package db
 
 import (
+	"context"
 	"os"
 	"testing"
 
 	_ "github.com/lib/pq"
 	"github.com/rs/zerolog/log"
+	"github.com/stretchr/testify/assert"
+	"github.com/vadim-ivlev/url-shortener/internal/apptypes"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
 )
 
@@ -77,37 +80,31 @@ func TestConnectToDatabase(t *testing.T) {
 	}
 }
 
-func Test_generateDollarSigns(t *testing.T) {
-	type args struct {
-		n     int
-		start int
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{
-			name: "Test_generateDollarSigns 0",
-			args: args{n: 0, start: 5},
-			want: "()",
-		},
-		{
-			name: "Test_generateDollarSigns 1",
-			args: args{n: 1, start: 5},
-			want: "($5)",
-		},
-		{
-			name: "Test_generateDollarSigns 2",
-			args: args{n: 2, start: 5},
-			want: "($5, $6)",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := generateDollarSigns(tt.args.n, tt.args.start); got != tt.want {
-				t.Errorf("generateDollarSigns() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+func TestDeleteKeys(t *testing.T) {
+	skipCI(t)
+	err := TryToConnect(1)
+	assert.NoError(t, err)
+
+	err = Clear()
+	assert.NoError(t, err)
+
+	err = AddRecord(apptypes.URLShortener{Idx: 10, ShortID: "short_id10", OriginalURL: "original_url10", UserID: "user_t", Deleted: 0})
+	assert.NoError(t, err)
+	err = AddRecord(apptypes.URLShortener{Idx: 11, ShortID: "short_id11", OriginalURL: "original_url11", UserID: "user_t", Deleted: 0})
+	assert.NoError(t, err)
+	err = AddRecord(apptypes.URLShortener{Idx: 12, ShortID: "short_id12", OriginalURL: "original_url12", UserID: "user_t", Deleted: 0})
+	assert.NoError(t, err)
+
+	err = DeleteShortIDs(context.Background(), "user_t", []any{"short_id10", "short_id11"})
+	assert.NoError(t, err)
+
+	record, _ := GetByShortID(context.Background(), "short_id10")
+	assert.EqualValues(t, record.Deleted, 1)
+
+	record, _ = GetByShortID(context.Background(), "short_id11")
+	assert.EqualValues(t, record.Deleted, 1)
+
+	record, _ = GetByShortID(context.Background(), "short_id12")
+	assert.EqualValues(t, record.Deleted, 0)
+
 }

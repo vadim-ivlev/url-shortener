@@ -506,19 +506,18 @@ func APIDeleteURLsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"status":"Accepted"}`))
 }
 
-// deleteShortIDs - удаляет короткие URL из хранилища в RAM и из посоянных хранилищ.
+// deleteShortIDs - удаляет короткие URL из хранилища в RAM и из постоянных хранилищ.
 func deleteShortIDs(ctx context.Context, userID string, ids []any) (err error) {
 	memstore.Store.DeleteShortIDs(userID, ids)
 
-	err = db.DeleteKeys(ctx, userID, ids)
-	if err != nil {
-		log.Warn().Err(err).Msg("Cannot delete shortID from the database")
-	}
-
-	memstoreRecords := memstore.Store.Records
-	err = filestorage.DumpRecords(memstoreRecords)
+	err = filestorage.DumpRecords(memstore.Store.Records)
 	if err != nil {
 		log.Warn().Err(err).Msg("Cannot save data to filestorage")
+	}
+
+	err = db.DeleteShortIDs(ctx, userID, ids)
+	if err != nil {
+		log.Warn().Err(err).Msg("Cannot delete shortID from the database")
 	}
 
 	return nil

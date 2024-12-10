@@ -70,6 +70,7 @@ func Clear() {
 // - добавленную запись, или ту, что уже есть в хранилище.
 // - true, если запись была добавлена, false, если запись уже есть в хранилище.
 // - ошибку, если запись не удалось добавить.
+// TODO: get rid of methods
 func (u *Urls) Add(record apptypes.URLShortener) (addedRecord apptypes.URLShortener, created bool, err error) {
 	u.mutex.Lock()
 	defer u.mutex.Unlock()
@@ -200,11 +201,8 @@ func (u *Urls) delete(userID, shortID string) error {
 	// Помечаем ключ как удаленный
 	u.Records[idx].Deleted = 1
 
-	// // TODO:?  Удаляем запись из индексов
-	// u.idxShortID.Delete(u.Records[idx])
-	// u.idxUserIDOriginalURL.Delete(u.Records[idx])
-
 	// Сохраняем запись в файловое хранилище
+	// TODO: too many writes
 	filestorage.DumpRecords(u.Records)
 
 	// Сохраняем в базу данных
@@ -224,6 +222,7 @@ func (u *Urls) delete(userID, shortID string) error {
 // - keys - массив ShortID
 //
 // Возвращает ошибку
+// TODO: OPTIMISE:
 func (u *Urls) DeleteShortIDs(userID string, shortIDs []any) error {
 	for _, shortID := range shortIDs {
 		go func(shortID string) {
@@ -249,7 +248,6 @@ func (u *Urls) PrintContent(limit int) {
 	}
 
 	for i := 0; i < limit; i++ {
-		// fmt.Println(config.JSONString(u.Records[i]))
 		fmt.Printf("%+v\n", u.Records[i])
 	}
 }

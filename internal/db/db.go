@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -48,8 +47,24 @@ func Disconnect() {
 }
 
 // IsConnected - проверяет, установлено ли соединение с базой данных
+// TODO: delete this function
 func IsConnected() bool {
 	return DB != nil && DB.Ping() == nil
+}
+
+// Clear - очищает таблицу urls
+//
+// Возвращает ошибку, если очистка не удалась.
+func Clear() error {
+	if !config.UseDatabase() {
+		return nil
+	}
+
+	if !IsConnected() {
+		return errors.New("Clear. No connection to DB")
+	}
+	_, err := DB.Exec("DELETE FROM urls")
+	return err
 }
 
 // AddRecord - добавляет запись в базу данных.
@@ -92,21 +107,6 @@ func UpdateRecord(record apptypes.URLShortener) error {
 	return err
 }
 
-// Clear - очищает таблицу urls
-//
-// Возвращает ошибку, если очистка не удалась.
-func Clear() error {
-	if !config.UseDatabase() {
-		return nil
-	}
-
-	if !IsConnected() {
-		return errors.New("Clear. No connection to DB")
-	}
-	_, err := DB.Exec("DELETE FROM urls")
-	return err
-}
-
 // GetByShortID - возвращает запись из базы данных по short_id.
 //
 // Параметры:
@@ -137,32 +137,14 @@ func GetRecords(ctx context.Context) (data []apptypes.URLShortener, err error) {
 	return data, err
 }
 
-// generateDollarSigns - генерирует строку вида "$1, $2, $3, ...",
-// для использования в выражении IN запроса к базе данных.
-// Параметры:
-// - n - количество знаков доллара
-// - start - начальное значение после знака доллара
-// Возвращает строку с запятыми и знаками доллара.
-func generateDollarSigns(n int, start int) string {
-	result := "("
-	for i := 0; i < n; i++ {
-		if i == 0 {
-			result += fmt.Sprintf("$%d", start)
-		} else {
-			result += fmt.Sprintf(", $%d", start+i)
-		}
-	}
-	return result + ")"
-}
-
-// DeleteKeys - помечает записи в базе данных как удаленные
+// DeleteShortIDs - помечает записи в базе данных как удаленные
 // добавляя префикс "-" к short_id.
 // Параметры:
 // - ctx - контекст
 // - userID - идентификатор пользователя
 // - keys - массив ключей
 // Возвращает ошибку, если удаление не удалось.
-func DeleteKeys(ctx context.Context, userID string, keys []any) error {
+func DeleteShortIDs(ctx context.Context, userID string, keys []any) (err error) {
 	if !config.UseDatabase() {
 		return nil
 	}
@@ -175,26 +157,15 @@ func DeleteKeys(ctx context.Context, userID string, keys []any) error {
 		return nil
 	}
 
-	// готовим запрос для обновления записей
-
-	query := `UPDATE urls 
-	SET deleted = 1 
-	WHERE user_id = $1 
-	AND short_id IN ` + generateDollarSigns(len(keys), 2)
-
-	// готовим аргументы для запроса
-	args := make([]any, 0, len(keys))
-	args = append(args, userID)
-	args = append(args, keys...)
-
-	res, err := DB.Exec(query, args...)
-
-	// Печатаем результат запроса
-	rowsAffected, err0 := res.RowsAffected()
-	if err0 != nil {
-		log.Error().Err(err0).Msg("DeleteKeys. RowsAffected error")
+	// готовим запрос для обновления записей. https://jmoiron.github.io/sqlx/
+	query, args, err := sqlx.In("UPDATE urls SET deleted = 1 WHERE user_id = ? AND short_id IN (?)", userID, keys)
+	if err != nil {
+		return err
 	}
-	log.Info().Msgf("DeleteKeys. %d rows affected", rowsAffected)
+	// rebinding query to adapt to the DB driver's bindvar type
+	query = DB.Rebind(query)
+	// выполняем запрос
+	_, err = DB.Exec(query, args...)
 
 	return err
 }
