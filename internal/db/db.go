@@ -47,7 +47,7 @@ func Disconnect() {
 }
 
 // IsConnected - проверяет, установлено ли соединение с базой данных
-// TODO: delete this function
+// TODO: should return error
 func IsConnected() bool {
 	return DB != nil && DB.Ping() == nil
 }
