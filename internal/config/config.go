@@ -50,5 +50,14 @@ func JSONString(params interface{}) string {
 // PrintParams - выводит параметры приложения в лог
 func PrintParams() {
 	log.Info().Msg("Параметры приложения:\n" + JSONString(Params))
-	JSONString(Params)
+}
+
+// useFileStorage - возвращает true, если нужно использовать файловое хранилище.
+func UseFileStorage() bool {
+	return Params.FileStoragePath != "" && Params.DatabaseDSN == ""
+}
+
+// UseDatabase - возвращает true, если нужно использовать базу данных.
+func UseDatabase() bool {
+	return Params.DatabaseDSN != ""
 }

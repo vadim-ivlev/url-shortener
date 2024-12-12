@@ -1,10 +1,4 @@
 // Description: Файловое хранилище для хранения записей в формате JSON.
-// Пример содержимого файла хранилища:
-// ```json
-// {"uuid":"1","short_url":"4rSPg8ap","original_url":"http://yandex.ru"}
-// {"uuid":"2","short_url":"edVPg3ks","original_url":"http://ya.ru"}
-// {"uuid":"3","short_url":"dG56Hqxm","original_url":"http://practicum.yandex.ru"}
-// ```
 
 package filestorage
 
@@ -13,16 +7,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
+	"github.com/vadim-ivlev/url-shortener/internal/apptypes"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
 )
-
-// FileStorageRecord - структура для хранения записи в файловом хранилище.
-type FileStorageRecord struct {
-	UUID        string `json:"uuid"`
-	ShortURL    string `json:"short_url"`
-	OriginalURL string `json:"original_url"`
-}
 
 // createDirIfNotExists - создает директорию в которой будет храниться файл хранилища, если ее нет.
 // Параметры:
@@ -37,22 +25,24 @@ func createDirIfNotExists(filePath string) error {
 	return nil
 }
 
-// Store - сохраняет данные в файловое хранилище.
-// Параметры:
-// - shortURL - укороченный URL.
-// - originalURL - оригинальный URL.
-// Возвращает ошибку, если запись не удалась.
-func Store(shortURL, originalURL string) error {
-	// Генерируем новый UUID
-	uuid, err := uuid.NewV7()
-	if err != nil {
-		return err
+// Clear - очищает файловое хранилище.
+func Clear() error {
+	if !config.UseFileStorage() {
+		return nil
 	}
-	// Создаем новую запись
-	record := FileStorageRecord{
-		UUID:        uuid.String(),
-		ShortURL:    shortURL,
-		OriginalURL: originalURL,
+	return os.Remove(config.Params.FileStoragePath)
+}
+
+// AddRecord - добавляет запись в файловое хранилище.
+//
+// Параметры:
+// - record - запись для сохранения.
+//
+// Возвращает ошибку, если запись не удалась.
+func AddRecord(record apptypes.URLShortener) error {
+	// Проверяем нужно ли сохранять запись в файловое хранилище
+	if !config.UseFileStorage() {
+		return nil
 	}
 
 	// Преобразуем запись в JSON
@@ -76,6 +66,47 @@ func Store(shortURL, originalURL string) error {
 	// Записываем recordJSON  в файл
 	if _, err := file.Write(append(recordJSON, '\n')); err != nil {
 		return err
+	}
+	log.Info().Msgf("Record saved to filestorage: %s in file %s", recordJSON, config.Params.FileStoragePath)
+	return nil
+}
+
+// DumpRecords - сохраняет записи в файловое хранилище.
+//
+// Параметры:
+// - records - записи для сохранения.
+//
+// Возвращает ошибку, если запись не удалась.
+func DumpRecords(records []apptypes.URLShortener) error {
+	// Проверяем нужно ли сохранять запись в файловое хранилище
+	if !config.UseFileStorage() {
+		return nil
+	}
+
+	// Создаем директорию для файла хранилища, если ее нет
+	if err := createDirIfNotExists(config.Params.FileStoragePath); err != nil {
+		return err
+	}
+
+	// Открываем файл для записи или создаем новый
+	// file, err := os.OpenFile(config.Params.FileStoragePath, os.O_CREATE|os.O_WRONLY| os.O_TRUNC , 0644)
+	file, err := os.Create(config.Params.FileStoragePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	for _, record := range records {
+		// Преобразуем запись в JSON
+		recordJSON, err := json.Marshal(record)
+		if err != nil {
+			return err
+		}
+
+		// Записываем recordJSON  в файл
+		if _, err := file.Write(append(recordJSON, '\n')); err != nil {
+			return err
+		}
 	}
 	return nil
 }

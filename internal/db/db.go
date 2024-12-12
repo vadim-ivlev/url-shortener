@@ -3,108 +3,175 @@ package db
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
-	"github.com/rs/zerolog/log"
+	"github.com/vadim-ivlev/url-shortener/internal/apptypes"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
 )
 
-// DB - пул соединений с базой данных
-var DB *sqlx.DB = nil
+var initSQL = `
+-- urls - хранит список уникальных URL и их коротких ключей
+CREATE TABLE IF NOT EXISTS urls (
+    idx INTEGER,                      -- Индекс записи в memstore
+    short_id TEXT PRIMARY KEY,         -- Короткий ключ
+    original_url TEXT NOT NULL,        -- Оригинальный URL
+    user_id TEXT,                      -- Идентификатор пользователя
+    deleted INTEGER DEFAULT 0,         -- Флаг удаления
+    UNIQUE (user_id, original_url)
+);
+`
 
-// CreatePool - создает пул соединений с базой данных
-func CreatePool() (err error) {
-	DB, err = sqlx.Connect("postgres", config.Params.DatabaseDSN)
-	return err
-}
+// db - пул соединений с базой данных
+var db *sqlx.DB = nil
 
-// TryToConnect - Пытается соединиться с базой данных повторяя попытки в случае неудачи.
-// numAttempts - количество попыток
-func TryToConnect(numAttempts int) (err error) {
-	err = errors.New("no attempts to connect to DB")
-	for i := 1; i <= numAttempts; i++ {
-		err = CreatePool()
-		if err == nil {
-			log.Info().Msg("Connected to DB")
-			return err
-		}
-		log.Warn().Err(err).Msgf("Waiting for db connection. Attempt # %d", i)
-		time.Sleep(time.Second)
+// Connect - устанавливает соединение с базой данных
+func Connect() (err error) {
+	// Проверяем нужно ли подключаться к базе данных
+	if !config.UseDatabase() {
+		return nil
 	}
-	log.Error().Msg("Failed to connect to DB")
+	Disconnect()
+	db, err = sqlx.Connect("postgres", config.Params.DatabaseDSN)
+	if err != nil {
+		return err
+	}
+	// Выполняем инициализацию базы данных
+	_, err = db.Exec(initSQL)
 	return err
 }
 
 // Disconnect - закрывает соединение с базой данных
 func Disconnect() {
-	if DB != nil {
-		DB.Close()
+	if db != nil {
+		db.Close()
 	}
-	DB = nil
+	db = nil
 }
 
 // IsConnected - проверяет, установлено ли соединение с базой данных
-func IsConnected() bool {
-	return DB != nil && DB.Ping() == nil
-}
-
-// Store - сохраняет данные в базу данных.
-// Параметры:
-// - ctx - контекст
-// - shortID - укороченный ID.
-// - originalURL - оригинальный URL.
-// Возвращает ошибку, если запись не удалась.
-func Store(ctx context.Context, shortID, originalURL string) error {
-	if !IsConnected() {
-		return errors.New("Store. No connection to DB")
+func IsConnected() error {
+	// return db != nil && db.Ping() == nil
+	if db == nil {
+		return errors.New("no connection to DB")
 	}
-	_, err := DB.ExecContext(ctx, "INSERT INTO urls (short_id, original_url) VALUES ($1, $2)", shortID, originalURL)
-	return err
+	return db.Ping()
 }
 
 // Clear - очищает таблицу urls
-// - ctx - контекст
+//
 // Возвращает ошибку, если очистка не удалась.
-func Clear(ctx context.Context) error {
-	if !IsConnected() {
-		return errors.New("Clear. No connection to DB")
+func Clear() error {
+	if !config.UseDatabase() {
+		return nil
 	}
-	_, err := DB.ExecContext(ctx, "DELETE FROM urls")
+
+	if err := IsConnected(); err != nil {
+		return err
+	}
+	_, err := db.Exec("DELETE FROM urls")
 	return err
 }
 
-// GetData - возвращает данные из базы данных в виде map[string]string,
-// где ключ - short_id, значение - original_url.
+// AddRecord - добавляет запись в базу данных.
+//
+// Параметры:
+// - record - запись для сохранения.
+//
+// Возвращает ошибку, если запись не удалась.
+func AddRecord(record apptypes.URLShortener) error {
+	// Проверяем нужно ли сохранять запись в файловое хранилище
+	if !config.UseDatabase() {
+		return nil
+	}
+
+	if err := IsConnected(); err != nil {
+		return err
+	}
+
+	_, err := db.Exec("INSERT INTO urls (idx, short_id, original_url, user_id, deleted) VALUES ($1, $2, $3, $4, $5)", record.Idx, record.ShortID, record.OriginalURL, record.UserID, record.Deleted)
+	return err
+}
+
+// UpdateRecord - обновляет запись в базе данных.
+//
+// Параметры:
+// - record - запись для сохранения.
+//
+// Возвращает ошибку, если запись не удалась.
+func UpdateRecord(record apptypes.URLShortener) error {
+	// Проверяем нужно ли сохранять запись в файловое хранилище
+	if !config.UseDatabase() {
+		return nil
+	}
+
+	if err := IsConnected(); err != nil {
+		return err
+	}
+
+	_, err := db.Exec("UPDATE urls SET idx = $1,  short_id = $2, original_url = $3, user_id = $4, deleted = $5 WHERE short_id = $6", record.Idx, record.ShortID, record.OriginalURL, record.UserID, record.Deleted, record.ShortID)
+	return err
+}
+
+// GetByShortID - возвращает запись из базы данных по short_id.
+//
 // Параметры:
 // - ctx - контекст
-func GetData(ctx context.Context) (data map[string]string, err error) {
-	if !IsConnected() {
-		return nil, errors.New("GetData. No connection to DB")
+// - shortID - короткий идентификатор
+//
+// Возвращает запись apptypes.URLShortener и ошибку.
+func GetByShortID(ctx context.Context, shortID string) (record apptypes.URLShortener, err error) {
+	if err := IsConnected(); err != nil {
+		return record, err
 	}
 
-	rows, err := DB.QueryxContext(ctx, "SELECT short_id, original_url FROM urls")
-	if err != nil {
+	err = db.GetContext(ctx, &record, "SELECT idx, short_id, original_url, user_id, deleted FROM urls WHERE short_id = $1", shortID)
+	return record, err
+}
+
+// GetRecords - возвращает данные из базы данных в виде массива apptypes.URLShortener.
+//
+// Параметры:
+// - ctx - контекст
+//
+// Возвращает массив apptypes.URLShortener и ошибку.
+func GetRecords(ctx context.Context) (data []apptypes.URLShortener, err error) {
+	if err := IsConnected(); err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	err = db.GetContext(ctx, &data, "SELECT idx, short_id, original_url, user_id, deleted FROM urls")
+	return data, err
+}
 
-	if rows.Err() != nil {
-		return nil, rows.Err()
+// DeleteShortIDs - помечает записи в базе данных как удаленные
+// добавляя префикс "-" к short_id.
+// Параметры:
+// - ctx - контекст
+// - userID - идентификатор пользователя
+// - keys - массив ключей
+// Возвращает ошибку, если удаление не удалось.
+func DeleteShortIDs(ctx context.Context, userID string, keys []any) (err error) {
+	if !config.UseDatabase() {
+		return nil
 	}
 
-	data = make(map[string]string)
-
-	for rows.Next() {
-		var shortID, originalURL string
-		err = rows.Scan(&shortID, &originalURL)
-		if err != nil {
-			log.Warn().Err(err).Msg("GetData Cannot scan row")
-			continue
-		}
-		data[shortID] = originalURL
+	if err := IsConnected(); err != nil {
+		return err
+	}
+	// если ключи не переданы, возвращаем успех
+	if len(keys) == 0 {
+		return nil
 	}
 
-	return data, nil
+	// готовим запрос для обновления записей. https://jmoiron.github.io/sqlx/
+	query, args, err := sqlx.In("UPDATE urls SET deleted = 1 WHERE user_id = ? AND short_id IN (?)", userID, keys)
+	if err != nil {
+		return err
+	}
+	// rebinding query to adapt to the DB driver's bindvar type
+	query = db.Rebind(query)
+	// выполняем запрос
+	_, err = db.Exec(query, args...)
+
+	return err
 }

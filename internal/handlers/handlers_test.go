@@ -14,10 +14,13 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/vadim-ivlev/url-shortener/internal/app"
+	"github.com/vadim-ivlev/url-shortener/internal/apptypes"
+	"github.com/vadim-ivlev/url-shortener/internal/auth"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
 	"github.com/vadim-ivlev/url-shortener/internal/db"
 	"github.com/vadim-ivlev/url-shortener/internal/logger"
-	"github.com/vadim-ivlev/url-shortener/internal/storage"
+	"github.com/vadim-ivlev/url-shortener/internal/memstore"
+	"github.com/vadim-ivlev/url-shortener/internal/shortener"
 )
 
 func skipCI(t *testing.T) {
@@ -35,6 +38,7 @@ func TestMain(m *testing.M) {
 	app.InitApp()
 
 	InitTestTable()
+	CorrectShortURLs("")
 	os.Exit(m.Run())
 }
 
@@ -98,11 +102,26 @@ func InitTestTable() {
 	}
 }
 
+// CorrectShortURLs корректирует короткие URL в тестовой таблице
+// в соответствии с userID
+func CorrectShortURLs(userID string) {
+	// Correct the shortURLs in the test table
+	for i, tt := range tests {
+		if tt.url == "" {
+			continue
+		}
+		// userAndURL := app.JoinUserAndURL(userID, tt.url)
+		userAndURL := userID + "@" + tt.url
+		shortID := shortener.Shorten(userAndURL)
+		tests[i].want.shortURL = config.Params.BaseURL + "/" + shortID
+	}
+}
+
 func TestShortenURLHandler(t *testing.T) {
 	skipCI(t)
 
 	// Очищаем хранилище
-	storage.Clear()
+	memstore.Clear()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -117,14 +136,15 @@ func TestShortenURLHandler(t *testing.T) {
 			assert.Contains(t, rec.Header().Get("Content-Type"), tt.want.contentType)
 		})
 	}
-	storage.PrintContent(3)
+
+	memstore.Store.PrintContent(3)
 }
 
 func TestAPIShortenHandler(t *testing.T) {
 	skipCI(t)
 
 	// Очищаем хранилище
-	storage.Clear()
+	memstore.Clear()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -140,7 +160,8 @@ func TestAPIShortenHandler(t *testing.T) {
 			fmt.Printf("Content-Type: %v\n", rec.Header().Get("Content-Type"))
 		})
 	}
-	storage.PrintContent(3)
+
+	memstore.Store.PrintContent(3)
 }
 
 func TestRedirectHandler(t *testing.T) {
@@ -212,7 +233,7 @@ func TestPingHandler(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, rec.Code)
 
 	// подключенная БД
-	db.TryToConnect(3)
+	db.Connect()
 	rec = httptest.NewRecorder()
 	PingHandler(rec, req)
 	assert.Equal(t, http.StatusOK, rec.Code)
@@ -263,21 +284,22 @@ func TestAPIShortenBatchHandler(t *testing.T) {
 	// Подсоединяемся к базе данных
 	os.Setenv("DATABASE_DSN", "postgres://postgres:postgres@localhost:5432/praktikum?sslmode=disable")
 	config.ParseEnv()
-	err := db.CreatePool()
+	// err := db.CreatePool()
+	err := db.Connect()
 	if err != nil {
 		log.Error().Err(err).Msg("Error")
 		return
 	}
 
 	// Очистим базу данных
-	err = db.Clear(context.Background())
+	err = db.Clear()
 	if err != nil {
 		log.Error().Err(err).Msg("Error")
 		return
 	}
 
 	// Очистим сторадж
-	storage.Clear()
+	memstore.Clear()
 
 	// Тестовые входные данные
 	var emptyInput []inpRec = nil
@@ -387,23 +409,23 @@ func TestAPIShortenBatchHandler(t *testing.T) {
 				assert.Equal(t, inputRecord.CorrelationID, outputRecords[i].CorrelationID)
 			}
 
-			// Проверка наличия записей в БД
-			dbData, err := db.GetData(context.Background())
-			if err != nil {
-				log.Error().Err(err).Msg("Error")
-				return
-			}
-			log.Info().Msgf("DB data: %v", PrettyString(dbData))
 			for _, responseRecord := range outputRecords {
 				shortID := app.ShortID(responseRecord.ShortURL)
 				// пустые shortID в базе данных не проверяем
 				if shortID == "" {
 					continue
 				}
-				originalURL, ok := dbData[shortID]
-				assert.True(t, ok)
-				log.Info().Msgf("DB record. ShortID: %v OriginalURL: %v", shortID, originalURL)
+				var found bool
+
+				// найти shortID в базе данных
+				_, err := db.GetByShortID(context.Background(), shortID)
+				if err == nil {
+					found = true
+				}
+
+				assert.True(t, found)
 			}
+
 		})
 	}
 }
@@ -411,4 +433,119 @@ func TestAPIShortenBatchHandler(t *testing.T) {
 func PrettyString(v interface{}) string {
 	b, _ := json.MarshalIndent(v, "", "  ")
 	return string(b)
+}
+
+func TestAPIUserURLsHandler(t *testing.T) {
+	skipCI(t)
+
+	// Типы тестовых аргументов и ожидаемых результатов
+	type argsU struct {
+		inputRecords map[string]string
+	}
+
+	type wantU struct {
+		status      int
+		contentType string
+		numRecords  int
+	}
+
+	// Тестовые случаи
+	testsU := []struct {
+		name string
+		args argsU
+		want wantU
+	}{
+		{
+			name: "Null",
+			args: argsU{
+				inputRecords: nil,
+			},
+			want: wantU{
+				status:      http.StatusNoContent,
+				contentType: "application/json",
+				numRecords:  0,
+			},
+		},
+		{
+			name: "Empty",
+			args: argsU{
+				inputRecords: map[string]string{},
+			},
+			want: wantU{
+				status:      http.StatusNoContent,
+				contentType: "application/json",
+				numRecords:  0,
+			},
+		},
+		{
+			name: "Normal",
+			args: argsU{
+				inputRecords: map[string]string{
+					"0": "https://www.google.com",
+					"1": "https://www.youtube.com",
+				},
+			},
+			want: wantU{
+				status:      http.StatusOK,
+				contentType: "application/json",
+				numRecords:  2,
+			},
+		},
+	}
+
+	userID := "user1"
+	for _, tt := range testsU {
+		t.Run(tt.name, func(t *testing.T) {
+			// Очистить хранилище
+			memstore.Clear()
+
+			// Добавить записи в хранилище
+			for shortID, originalURL := range tt.args.inputRecords {
+				memstore.Store.Add(apptypes.URLShortener{ShortID: shortID, OriginalURL: originalURL, UserID: userID})
+			}
+
+			req := httptest.NewRequest(http.MethodGet, "/api/user/urls", nil)
+			// Добавить userID в контекст запроса с меткой "old"
+			ctx := auth.AddUserIDToContext(req.Context(), userID, "old")
+			rec := httptest.NewRecorder()
+			// Вызов обработчика
+			APIUserURLsHandler(rec, req.WithContext(ctx))
+
+			// Проверка статуса ответа
+			status := rec.Code
+			log.Info().Msgf("Status: %v", status)
+			assert.Equal(t, tt.want.status, status)
+
+			// Проверка типа контента
+			contentType := rec.Header().Get("Content-Type")
+			log.Info().Msgf("Content-Type: %v", contentType)
+			assert.Equal(t, tt.want.contentType, contentType)
+
+			// Печать тела ответа
+			log.Info().Msgf("Body: %v", rec.Body.String())
+
+			// Распарсить тело ответа в массив структур
+			outputRecords := []dataRec{}
+			err := json.Unmarshal(rec.Body.Bytes(), &outputRecords)
+			if err != nil {
+				log.Error().Err(err).Msg("Error")
+			}
+
+			// Печать массива структур ответа
+			log.Info().Msgf("outputRecords: %v", PrettyString(outputRecords))
+
+			// Проверка количества элементов в ответе
+			assert.Equal(t, tt.want.numRecords, len(outputRecords), "Number of records in response")
+
+			// Проверка корреляционных идентификаторов
+			for i, outputRecord := range outputRecords {
+				log.Info().Msgf("Output record %d : %v", i, outputRecord)
+				shortID := app.ShortID(outputRecord.ShortURL)
+				originalURL, ok := tt.args.inputRecords[shortID]
+				assert.True(t, ok)
+				assert.Equal(t, originalURL, outputRecord.OriginalURL)
+			}
+		})
+	}
+
 }

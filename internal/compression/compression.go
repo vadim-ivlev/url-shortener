@@ -36,9 +36,9 @@ func (c *compressWriter) Write(p []byte) (int, error) {
 
 // WriteHeader устанавливает статус ответа и Content-Encoding: gzip, если статус ответа меньше 300
 func (c *compressWriter) WriteHeader(statusCode int) {
-	if statusCode < 300 {
-		c.w.Header().Set("Content-Encoding", "gzip")
-	}
+	// if statusCode < 300 {
+	c.w.Header().Set("Content-Encoding", "gzip")
+	// }
 	c.w.WriteHeader(statusCode)
 }
 

@@ -7,14 +7,19 @@ import (
 	"os"
 
 	"github.com/rs/zerolog/log"
+	"github.com/vadim-ivlev/url-shortener/internal/apptypes"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
-	"github.com/vadim-ivlev/url-shortener/internal/filestorage"
-	"github.com/vadim-ivlev/url-shortener/internal/storage"
+	"github.com/vadim-ivlev/url-shortener/internal/memstore"
 )
 
 // LoadFileDataToStorage - загружает данные из файлового хранилища в storage.
 // Возвращает ошибку.
 func LoadFileDataToStorage() (err error) {
+	// Проверяем нужно ли загружать данные из файлового хранилища
+	if !config.UseFileStorage() {
+		return nil
+	}
+
 	// Открываем файл для чтения
 	file, err := os.OpenFile(config.Params.FileStoragePath, os.O_RDONLY|os.O_CREATE, 0644)
 	if err != nil {
@@ -24,19 +29,21 @@ func LoadFileDataToStorage() (err error) {
 	defer file.Close()
 
 	// Читаем все записи из файла
-	records := make([]filestorage.FileStorageRecord, 0)
+	// records := make([]filestorage.FileStorageRecord, 0)
+	records := make([]apptypes.URLShortener, 0)
 	decoder := json.NewDecoder(file)
 	for {
-		var record filestorage.FileStorageRecord
+		// var record filestorage.FileStorageRecord
+		var record apptypes.URLShortener
 		if err := decoder.Decode(&record); err != nil {
 			break
 		}
 		records = append(records, record)
 
-		// Извлекаем shortID из record.ShortURL
-		shortID := record.ShortURL[len(config.Params.BaseURL)+1:]
 		// Добавляем запись в карту хранилища
-		storage.Set(shortID, record.OriginalURL)
+		// storage.Set(record.ShortID, record.OriginalURL)
+		memstore.Store.Add(record)
+
 	}
 
 	log.Info().Msgf("%d Records loaded from filestorage", len(records))

@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog/log"
+	"github.com/vadim-ivlev/url-shortener/internal/auth"
 	"github.com/vadim-ivlev/url-shortener/internal/compression"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
 	"github.com/vadim-ivlev/url-shortener/internal/handlers"
@@ -17,6 +18,8 @@ func ServeChi() {
 
 	r.Use(logger.RequestLogger)
 	r.Use(compression.GzipMiddleware)
+	r.Use(auth.AuthMiddleware)
+
 	r.Post("/", handlers.ShortenURLHandler)
 	r.Get("/{id}", handlers.RedirectHandler)
 	r.Get("/ping", handlers.PingHandler)
@@ -25,6 +28,8 @@ func ServeChi() {
 		r.Use(contentTypeJSON)
 		r.Post("/shorten", handlers.APIShortenHandler)
 		r.Post("/shorten/batch", handlers.APIShortenBatchHandler)
+		r.Get("/user/urls", handlers.APIUserURLsHandler)
+		r.Delete("/user/urls", handlers.APIDeleteURLsHandler)
 	})
 
 	address := config.Params.ServerAddress
