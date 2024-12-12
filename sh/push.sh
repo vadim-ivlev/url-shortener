@@ -8,7 +8,5 @@ echo
 
 git add -A .
 git commit -m "$msg."
-
 git push origin --all 
-
 git push origin --tags 
