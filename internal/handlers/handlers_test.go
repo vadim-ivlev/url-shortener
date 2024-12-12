@@ -233,7 +233,7 @@ func TestPingHandler(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, rec.Code)
 
 	// подключенная БД
-	db.TryToConnect(3)
+	db.Connect()
 	rec = httptest.NewRecorder()
 	PingHandler(rec, req)
 	assert.Equal(t, http.StatusOK, rec.Code)
@@ -284,7 +284,8 @@ func TestAPIShortenBatchHandler(t *testing.T) {
 	// Подсоединяемся к базе данных
 	os.Setenv("DATABASE_DSN", "postgres://postgres:postgres@localhost:5432/praktikum?sslmode=disable")
 	config.ParseEnv()
-	err := db.CreatePool()
+	// err := db.CreatePool()
+	err := db.Connect()
 	if err != nil {
 		log.Error().Err(err).Msg("Error")
 		return

@@ -31,13 +31,15 @@ func InitApp() {
 	// storage.Create()
 	memstore.Store = memstore.NewStore()
 
-	// Подключиться к базе данных с 1-й попытки
-	db.TryToConnect(1)
-	// Выполнить миграции базы данных
-	db.MigrateUp("./migrations")
+	// Подключиться к базе данных
+	err := db.Connect()
+	if err != nil {
+		log.Error().Err(err).Msg("Cannot connect to DB")
+		return
+	}
 
 	// Загрузить данные из файлового хранилища
-	err := LoadFileDataToStorage()
+	err = LoadFileDataToStorage()
 	if err != nil {
 		log.Warn().Err(err).Msg("Cannot load data to storage")
 	}
