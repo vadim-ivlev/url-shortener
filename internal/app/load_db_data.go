@@ -4,7 +4,6 @@ package app
 
 import (
 	"context"
-	"errors"
 
 	"github.com/rs/zerolog/log"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
@@ -23,8 +22,7 @@ func LoadDBDataToStorage(ctx context.Context) (err error) {
 	}
 
 	// Проверяем, что есть соединение с базой данных
-	if !db.IsConnected() {
-		err = errors.New("LoadDBDataToStorage(). No connection to DB")
+	if err := db.IsConnected(); err != nil {
 		log.Error().Err(err).Msg("LoadDBDataToStorage(). Cannot load data from DB")
 		return err
 	}

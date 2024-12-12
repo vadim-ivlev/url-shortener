@@ -50,9 +50,12 @@ func Disconnect() {
 }
 
 // IsConnected - проверяет, установлено ли соединение с базой данных
-// TODO: should return error
-func IsConnected() bool {
-	return db != nil && db.Ping() == nil
+func IsConnected() error {
+	// return db != nil && db.Ping() == nil
+	if db == nil {
+		return errors.New("no connection to DB")
+	}
+	return db.Ping()
 }
 
 // Clear - очищает таблицу urls
@@ -63,8 +66,8 @@ func Clear() error {
 		return nil
 	}
 
-	if !IsConnected() {
-		return errors.New("Clear. No connection to DB")
+	if err := IsConnected(); err != nil {
+		return err
 	}
 	_, err := db.Exec("DELETE FROM urls")
 	return err
@@ -82,8 +85,8 @@ func AddRecord(record apptypes.URLShortener) error {
 		return nil
 	}
 
-	if !IsConnected() {
-		return errors.New("AddRecord. No connection to DB")
+	if err := IsConnected(); err != nil {
+		return err
 	}
 
 	_, err := db.Exec("INSERT INTO urls (idx, short_id, original_url, user_id, deleted) VALUES ($1, $2, $3, $4, $5)", record.Idx, record.ShortID, record.OriginalURL, record.UserID, record.Deleted)
@@ -102,8 +105,8 @@ func UpdateRecord(record apptypes.URLShortener) error {
 		return nil
 	}
 
-	if !IsConnected() {
-		return errors.New("UpdateRecord. No connection to DB")
+	if err := IsConnected(); err != nil {
+		return err
 	}
 
 	_, err := db.Exec("UPDATE urls SET idx = $1,  short_id = $2, original_url = $3, user_id = $4, deleted = $5 WHERE short_id = $6", record.Idx, record.ShortID, record.OriginalURL, record.UserID, record.Deleted, record.ShortID)
@@ -118,8 +121,8 @@ func UpdateRecord(record apptypes.URLShortener) error {
 //
 // Возвращает запись apptypes.URLShortener и ошибку.
 func GetByShortID(ctx context.Context, shortID string) (record apptypes.URLShortener, err error) {
-	if !IsConnected() {
-		return record, errors.New("GetByShortID. No connection to DB")
+	if err := IsConnected(); err != nil {
+		return record, err
 	}
 
 	err = db.GetContext(ctx, &record, "SELECT idx, short_id, original_url, user_id, deleted FROM urls WHERE short_id = $1", shortID)
@@ -133,8 +136,8 @@ func GetByShortID(ctx context.Context, shortID string) (record apptypes.URLShort
 //
 // Возвращает массив apptypes.URLShortener и ошибку.
 func GetRecords(ctx context.Context) (data []apptypes.URLShortener, err error) {
-	if !IsConnected() {
-		return nil, errors.New("GetData. No connection to DB")
+	if err := IsConnected(); err != nil {
+		return nil, err
 	}
 	err = db.GetContext(ctx, &data, "SELECT idx, short_id, original_url, user_id, deleted FROM urls")
 	return data, err
@@ -152,8 +155,8 @@ func DeleteShortIDs(ctx context.Context, userID string, keys []any) (err error) 
 		return nil
 	}
 
-	if !IsConnected() {
-		return errors.New("DeleteKeys. No connection to DB")
+	if err := IsConnected(); err != nil {
+		return err
 	}
 	// если ключи не переданы, возвращаем успех
 	if len(keys) == 0 {
