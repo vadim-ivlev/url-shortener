@@ -9,11 +9,16 @@ import (
 	"strings"
 
 	"github.com/rs/zerolog/log"
+
+	"github.com/vadim-ivlev/url-shortener/internal/apptypes"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
 	"github.com/vadim-ivlev/url-shortener/internal/db"
 	"github.com/vadim-ivlev/url-shortener/internal/logger"
 	"github.com/vadim-ivlev/url-shortener/internal/memstore"
 )
+
+// MemStore - хранилище записей URLShortener в оперативной памяти.
+var MemStore apptypes.MemStoreInterface
 
 // InitApp инициализирует приложение.
 func InitApp() {
@@ -53,7 +58,7 @@ func InitApp() {
 	}
 
 	// Печать содержимого хранилища в лог
-	memstore.Store.PrintContent(5)
+	memstore.Store.PrintRecords(5)
 }
 
 // Получить короткий URL из shortID

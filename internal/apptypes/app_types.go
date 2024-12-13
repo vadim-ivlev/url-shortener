@@ -10,8 +10,10 @@ type URLShortener struct {
 	Deleted int64 `json:"deleted" db:"deleted"`
 }
 
-// Store - интерфейс для работы с хранилищем записей URLShortener.
-type Store interface {
+// MemStoreInterface - интерфейс для работы с хранилищем записей URLShortener.
+type MemStoreInterface interface {
+	// Clear очищает хранилище.
+	Clear()
 	// AddRecord добавляет запись в хранилище.
 	AddRecord(record URLShortener) (addedRecord URLShortener, created bool, err error)
 	// AddRecords добавляет несколько записей в хранилище.

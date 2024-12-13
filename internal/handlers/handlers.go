@@ -59,7 +59,7 @@ func ShortenURLHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Сгенерировать короткий id и сохранить его
 	// memstore.Store.Add(apptypes.URLShortener{OriginalURL: originalURL, UserID: userID})
-	record, aNewOne, err := memstore.Store.Add(apptypes.URLShortener{OriginalURL: originalURL, UserID: userID})
+	record, aNewOne, err := memstore.Store.AddRecord(apptypes.URLShortener{OriginalURL: originalURL, UserID: userID})
 	// shortURL, aNewOne, err := generateAndSaveShortURL(ctx, app.JoinUserAndURL(userID, originalURL))
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -107,7 +107,7 @@ func RedirectHandler(w http.ResponseWriter, r *http.Request) {
 	// }
 
 	// Получить запись из хранилища в RAM
-	record, err := memstore.Store.GetByShortID(id)
+	record, err := memstore.Store.GetRecordByShortID(id)
 	// проверить, что запись найдена
 	if err != nil {
 		http.Error(w, "URL not found", http.StatusBadRequest)
@@ -193,7 +193,7 @@ func APIShortenHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Сгенерировать короткий id и сохранить его
-	record, aNewOne, err := memstore.Store.Add(apptypes.URLShortener{OriginalURL: originalURL, UserID: userID})
+	record, aNewOne, err := memstore.Store.AddRecord(apptypes.URLShortener{OriginalURL: originalURL, UserID: userID})
 	// shortURL, aNewOne, err := generateAndSaveShortURL(ctx, app.JoinUserAndURL(userID, originalURL))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -328,7 +328,7 @@ func APIShortenBatchHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		// Сгенерировать короткий id и сохранить его в хранилище и в БД
-		record, _, err := memstore.Store.Add(apptypes.URLShortener{OriginalURL: originalURL, UserID: userID})
+		record, _, err := memstore.Store.AddRecord(apptypes.URLShortener{OriginalURL: originalURL, UserID: userID})
 		// shortURL, _, err := generateAndSaveShortURL(ctx, app.JoinUserAndURL(userID, originalURL))
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -394,7 +394,7 @@ func APIUserURLsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Получить все короткие URL пользователя
 	// urls := app.GetUserURLs(userID)
-	records := memstore.Store.GetByUserID(userID)
+	records := memstore.Store.GetRecordsByUserID(userID)
 	urls := []map[string]string{}
 	for _, record := range records {
 		urls = append(urls, map[string]string{"short_url": app.ShortURL(record.ShortID), "original_url": record.OriginalURL})
@@ -508,7 +508,7 @@ func APIDeleteURLsHandler(w http.ResponseWriter, r *http.Request) {
 
 // deleteShortIDs - удаляет короткие URL из хранилища в RAM и из постоянных хранилищ.
 func deleteShortIDs(ctx context.Context, userID string, ids []any) (err error) {
-	memstore.Store.DeleteShortIDs(userID, ids)
+	memstore.Store.DeleteRecords(userID, ids)
 
 	err = filestorage.DumpRecords(memstore.Store.Records)
 	if err != nil {

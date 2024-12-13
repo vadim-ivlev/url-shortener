@@ -137,7 +137,7 @@ func TestShortenURLHandler(t *testing.T) {
 		})
 	}
 
-	memstore.Store.PrintContent(3)
+	memstore.Store.PrintRecords(3)
 }
 
 func TestAPIShortenHandler(t *testing.T) {
@@ -161,7 +161,7 @@ func TestAPIShortenHandler(t *testing.T) {
 		})
 	}
 
-	memstore.Store.PrintContent(3)
+	memstore.Store.PrintRecords(3)
 }
 
 func TestRedirectHandler(t *testing.T) {
@@ -501,7 +501,7 @@ func TestAPIUserURLsHandler(t *testing.T) {
 
 			// Добавить записи в хранилище
 			for shortID, originalURL := range tt.args.inputRecords {
-				memstore.Store.Add(apptypes.URLShortener{ShortID: shortID, OriginalURL: originalURL, UserID: userID})
+				memstore.Store.AddRecord(apptypes.URLShortener{ShortID: shortID, OriginalURL: originalURL, UserID: userID})
 			}
 
 			req := httptest.NewRequest(http.MethodGet, "/api/user/urls", nil)
