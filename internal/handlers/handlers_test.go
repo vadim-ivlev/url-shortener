@@ -121,7 +121,7 @@ func TestShortenURLHandler(t *testing.T) {
 	skipCI(t)
 
 	// Очищаем хранилище
-	memstore.Clear()
+	memstore.Store.Clear()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -144,7 +144,7 @@ func TestAPIShortenHandler(t *testing.T) {
 	skipCI(t)
 
 	// Очищаем хранилище
-	memstore.Clear()
+	memstore.Store.Clear()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -299,7 +299,7 @@ func TestAPIShortenBatchHandler(t *testing.T) {
 	}
 
 	// Очистим сторадж
-	memstore.Clear()
+	memstore.Store.Clear()
 
 	// Тестовые входные данные
 	var emptyInput []inpRec = nil
@@ -497,7 +497,7 @@ func TestAPIUserURLsHandler(t *testing.T) {
 	for _, tt := range testsU {
 		t.Run(tt.name, func(t *testing.T) {
 			// Очистить хранилище
-			memstore.Clear()
+			memstore.Store.Clear()
 
 			// Добавить записи в хранилище
 			for shortID, originalURL := range tt.args.inputRecords {

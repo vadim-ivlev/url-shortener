@@ -28,8 +28,10 @@ func InitApp() {
 	config.PrintParams()
 
 	// Создать хранилище в памяти
-	// storage.Create()
 	memstore.Store = memstore.NewStore()
+
+	// Почистить хранилища
+	memstore.Store.Clear()
 
 	// Подключиться к базе данных
 	err := db.Connect()
