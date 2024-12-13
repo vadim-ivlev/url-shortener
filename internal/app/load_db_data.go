@@ -31,7 +31,7 @@ func LoadDBDataToStorage(ctx context.Context) (err error) {
 		log.Warn().Err(err).Msg("loadDataFromDB(). Cannot get data from DB")
 		return err
 	}
-	numAdded, errs := memstore.Store.AddRecords(records)
+	numAdded, errs := memstore.AddRecords(records)
 	if len(errs) > 0 {
 		log.Error().Errs("errors", errs).Msg("loadDataFromDB(). Errors while adding records to storage")
 	}

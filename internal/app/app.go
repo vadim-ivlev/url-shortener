@@ -51,7 +51,7 @@ func InitApp() {
 	}
 
 	// Печать содержимого хранилища в лог
-	memstore.Store.PrintContent(5)
+	memstore.PrintContent(5)
 }
 
 // Получить короткий URL из shortID

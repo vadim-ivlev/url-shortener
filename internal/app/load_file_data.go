@@ -42,7 +42,7 @@ func LoadFileDataToStorage() (err error) {
 
 		// Добавляем запись в карту хранилища
 		// storage.Set(record.ShortID, record.OriginalURL)
-		memstore.Store.Add(record)
+		memstore.Add(record)
 
 	}
 
