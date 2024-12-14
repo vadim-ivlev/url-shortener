@@ -1,11 +1,12 @@
-package db
+package lite
 
 import (
 	"context"
 	"errors"
 
 	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
+	// _ "github.com/lib/pq"
+	_ "github.com/glebarez/go-sqlite"
 	"github.com/vadim-ivlev/url-shortener/internal/apptypes"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
 )
@@ -43,7 +44,7 @@ func (d *dbstore) Connect() (err error) {
 		return nil
 	}
 	d.Disconnect()
-	d.dbPool, err = sqlx.Connect("postgres", config.Params.DatabaseDSN)
+	d.dbPool, err = sqlx.Connect("sqlite", "urls.db")
 	if err != nil {
 		return err
 	}
@@ -186,6 +187,7 @@ func (d *dbstore) DeleteRecords(ctx context.Context, userID string, keys []any) 
 //
 // Возвращает массив apptypes.URLShortener и ошибку.
 func (d *dbstore) GetRecords(ctx context.Context) (data []apptypes.URLShortener, err error) {
+	data = []apptypes.URLShortener{}
 	if err := d.IsConnected(); err != nil {
 		return nil, err
 	}
