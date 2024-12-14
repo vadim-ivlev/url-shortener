@@ -34,12 +34,13 @@ func InitApp() {
 
 	// Создать хранилище в памяти
 	MemStore = memstore.NewStore()
-
 	// Почистить хранилища
-	MemStore.Clear()
+	// MemStore.Clear()
 
+	// Создать хранилище базы данных
+	db.PGStore = db.New()
 	// Подключиться к базе данных
-	err := db.Connect()
+	err := db.PGStore.Connect()
 	if err != nil {
 		log.Error().Err(err).Msg("Cannot connect to DB")
 		return

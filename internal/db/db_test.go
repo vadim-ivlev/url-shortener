@@ -25,34 +25,36 @@ func TestMain(m *testing.M) {
 	os.Setenv("DATABASE_DSN", "postgres://postgres:postgres@localhost:5432/praktikum?sslmode=disable")
 	config.ParseCommandLine()
 	config.ParseEnv()
+	PGStore = New()
 	os.Exit(m.Run())
 }
 
 func TestDeleteKeys(t *testing.T) {
 	skipCI(t)
-	err := Connect()
+
+	err := PGStore.Connect()
 	assert.NoError(t, err)
 
-	err = Clear()
+	err = PGStore.Clear()
 	assert.NoError(t, err)
 
-	err = AddRecord(apptypes.URLShortener{Idx: 10, ShortID: "short_id10", OriginalURL: "original_url10", UserID: "user_t", Deleted: 0})
+	err = PGStore.AddRecord(apptypes.URLShortener{Idx: 10, ShortID: "short_id10", OriginalURL: "original_url10", UserID: "user_t", Deleted: 0})
 	assert.NoError(t, err)
-	err = AddRecord(apptypes.URLShortener{Idx: 11, ShortID: "short_id11", OriginalURL: "original_url11", UserID: "user_t", Deleted: 0})
+	err = PGStore.AddRecord(apptypes.URLShortener{Idx: 11, ShortID: "short_id11", OriginalURL: "original_url11", UserID: "user_t", Deleted: 0})
 	assert.NoError(t, err)
-	err = AddRecord(apptypes.URLShortener{Idx: 12, ShortID: "short_id12", OriginalURL: "original_url12", UserID: "user_t", Deleted: 0})
-	assert.NoError(t, err)
-
-	err = DeleteRecords(context.Background(), "user_t", []any{"short_id10", "short_id11"})
+	err = PGStore.AddRecord(apptypes.URLShortener{Idx: 12, ShortID: "short_id12", OriginalURL: "original_url12", UserID: "user_t", Deleted: 0})
 	assert.NoError(t, err)
 
-	record, _ := GetRecordByShortID(context.Background(), "short_id10")
+	err = PGStore.DeleteRecords(context.Background(), "user_t", []any{"short_id10", "short_id11"})
+	assert.NoError(t, err)
+
+	record, _ := PGStore.GetRecordByShortID(context.Background(), "short_id10")
 	assert.EqualValues(t, record.Deleted, 1)
 
-	record, _ = GetRecordByShortID(context.Background(), "short_id11")
+	record, _ = PGStore.GetRecordByShortID(context.Background(), "short_id11")
 	assert.EqualValues(t, record.Deleted, 1)
 
-	record, _ = GetRecordByShortID(context.Background(), "short_id12")
+	record, _ = PGStore.GetRecordByShortID(context.Background(), "short_id12")
 	assert.EqualValues(t, record.Deleted, 0)
 
 }

@@ -127,7 +127,7 @@ func RedirectHandler(w http.ResponseWriter, r *http.Request) {
 // PingHandler - при запросе проверяет соединение с базой данных.
 // При успешной проверке хендлер должен вернуть HTTP-статус `200 OK`, при неуспешной — `500 Internal Server Error`.
 func PingHandler(w http.ResponseWriter, r *http.Request) {
-	if err := db.IsConnected(); err == nil {
+	if err := db.PGStore.IsConnected(); err == nil {
 		w.WriteHeader(http.StatusOK)
 	} else {
 		http.Error(w, "No connection do database", http.StatusInternalServerError)
@@ -514,7 +514,7 @@ func deleteShortIDs(ctx context.Context, userID string, ids []any) (err error) {
 		log.Warn().Err(err).Msg("Cannot save data to filestorage")
 	}
 
-	err = db.DeleteRecords(ctx, userID, ids)
+	err = db.PGStore.DeleteRecords(ctx, userID, ids)
 	if err != nil {
 		log.Warn().Err(err).Msg("Cannot delete shortID from the database")
 	}

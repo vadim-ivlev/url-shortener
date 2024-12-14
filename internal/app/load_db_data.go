@@ -21,11 +21,11 @@ func LoadDBDataToStorage(ctx context.Context) (err error) {
 	}
 
 	// Проверяем, что есть соединение с базой данных
-	if err := db.IsConnected(); err != nil {
+	if err := db.PGStore.IsConnected(); err != nil {
 		log.Error().Err(err).Msg("LoadDBDataToStorage(). Cannot load data from DB")
 		return err
 	}
-	records, err := db.GetRecords(ctx)
+	records, err := db.PGStore.GetRecords(ctx)
 	if err != nil {
 		log.Warn().Err(err).Msg("loadDataFromDB(). Cannot get data from DB")
 		return err

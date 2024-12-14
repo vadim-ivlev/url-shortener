@@ -226,13 +226,13 @@ func TestPingHandler(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/ping", nil)
 
 	// отключенная БД
-	db.Disconnect()
+	db.PGStore.Disconnect()
 	rec := httptest.NewRecorder()
 	PingHandler(rec, req)
 	assert.Equal(t, http.StatusInternalServerError, rec.Code)
 
 	// подключенная БД
-	db.Connect()
+	db.PGStore.Connect()
 	rec = httptest.NewRecorder()
 	PingHandler(rec, req)
 	assert.Equal(t, http.StatusOK, rec.Code)
@@ -283,15 +283,15 @@ func TestAPIShortenBatchHandler(t *testing.T) {
 	// Подсоединяемся к базе данных
 	os.Setenv("DATABASE_DSN", "postgres://postgres:postgres@localhost:5432/praktikum?sslmode=disable")
 	config.ParseEnv()
-	// err := db.CreatePool()
-	err := db.Connect()
+
+	err := db.PGStore.Connect()
 	if err != nil {
 		log.Error().Err(err).Msg("Error")
 		return
 	}
 
 	// Очистим базу данных
-	err = db.Clear()
+	err = db.PGStore.Clear()
 	if err != nil {
 		log.Error().Err(err).Msg("Error")
 		return
@@ -417,7 +417,7 @@ func TestAPIShortenBatchHandler(t *testing.T) {
 				var found bool
 
 				// найти shortID в базе данных
-				_, err := db.GetRecordByShortID(context.Background(), shortID)
+				_, err := db.PGStore.GetRecordByShortID(context.Background(), shortID)
 				if err == nil {
 					found = true
 				}

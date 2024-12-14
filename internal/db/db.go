@@ -22,8 +22,8 @@ CREATE TABLE IF NOT EXISTS urls (
 );
 `
 
-// dbPool - пул соединений с базой данных
-var dbPool *sqlx.DB = nil
+// PGStore - хранилище записей URLShortener в базе данных.
+var PGStore *dbstore
 
 // dbstore - структура для хранения данных в базе данных.
 type dbstore struct {
@@ -37,50 +37,50 @@ func New() *dbstore {
 }
 
 // Connect - устанавливает соединение с базой данных
-func Connect() (err error) {
+func (d *dbstore) Connect() (err error) {
 	// Проверяем нужно ли подключаться к базе данных
 	if !config.UseDatabase() {
 		return nil
 	}
-	Disconnect()
-	dbPool, err = sqlx.Connect("postgres", config.Params.DatabaseDSN)
+	d.Disconnect()
+	d.dbPool, err = sqlx.Connect("postgres", config.Params.DatabaseDSN)
 	if err != nil {
 		return err
 	}
 	// Выполняем инициализацию базы данных
-	_, err = dbPool.Exec(initSQL)
+	_, err = d.dbPool.Exec(initSQL)
 	return err
 }
 
 // Disconnect - закрывает соединение с базой данных
-func Disconnect() {
-	if dbPool != nil {
-		dbPool.Close()
+func (d *dbstore) Disconnect() {
+	if d.dbPool != nil {
+		d.dbPool.Close()
 	}
-	dbPool = nil
+	d.dbPool = nil
 }
 
 // IsConnected - проверяет, установлено ли соединение с базой данных
-func IsConnected() error {
+func (d *dbstore) IsConnected() error {
 	// return db != nil && db.Ping() == nil
-	if dbPool == nil {
+	if d.dbPool == nil {
 		return errors.New("no connection to DB")
 	}
-	return dbPool.Ping()
+	return d.dbPool.Ping()
 }
 
 // Clear - очищает таблицу urls
 //
 // Возвращает ошибку, если очистка не удалась.
-func Clear() error {
+func (d *dbstore) Clear() error {
 	if !config.UseDatabase() {
 		return nil
 	}
 
-	if err := IsConnected(); err != nil {
+	if err := d.IsConnected(); err != nil {
 		return err
 	}
-	_, err := dbPool.Exec("DELETE FROM urls")
+	_, err := d.dbPool.Exec("DELETE FROM urls")
 	return err
 }
 
@@ -90,17 +90,17 @@ func Clear() error {
 // - record - запись для сохранения.
 //
 // Возвращает ошибку, если запись не удалась.
-func AddRecord(record apptypes.URLShortener) error {
+func (d *dbstore) AddRecord(record apptypes.URLShortener) error {
 	// Проверяем нужно ли сохранять запись в файловое хранилище
 	if !config.UseDatabase() {
 		return nil
 	}
 
-	if err := IsConnected(); err != nil {
+	if err := d.IsConnected(); err != nil {
 		return err
 	}
 
-	_, err := dbPool.Exec("INSERT INTO urls (idx, short_id, original_url, user_id, deleted) VALUES ($1, $2, $3, $4, $5)", record.Idx, record.ShortID, record.OriginalURL, record.UserID, record.Deleted)
+	_, err := d.dbPool.Exec("INSERT INTO urls (idx, short_id, original_url, user_id, deleted) VALUES ($1, $2, $3, $4, $5)", record.Idx, record.ShortID, record.OriginalURL, record.UserID, record.Deleted)
 	return err
 }
 
@@ -113,17 +113,17 @@ func AddRecord(record apptypes.URLShortener) error {
 // - record - запись для сохранения.
 //
 // Возвращает ошибку, если запись не удалась.
-func UpdateRecord(record apptypes.URLShortener) error {
+func (d *dbstore) UpdateRecord(record apptypes.URLShortener) error {
 	// Проверяем нужно ли сохранять запись в файловое хранилище
 	if !config.UseDatabase() {
 		return nil
 	}
 
-	if err := IsConnected(); err != nil {
+	if err := d.IsConnected(); err != nil {
 		return err
 	}
 
-	_, err := dbPool.Exec("UPDATE urls SET idx = $1,  short_id = $2, original_url = $3, user_id = $4, deleted = $5 WHERE short_id = $6", record.Idx, record.ShortID, record.OriginalURL, record.UserID, record.Deleted, record.ShortID)
+	_, err := d.dbPool.Exec("UPDATE urls SET idx = $1,  short_id = $2, original_url = $3, user_id = $4, deleted = $5 WHERE short_id = $6", record.Idx, record.ShortID, record.OriginalURL, record.UserID, record.Deleted, record.ShortID)
 	return err
 }
 
@@ -134,12 +134,12 @@ func UpdateRecord(record apptypes.URLShortener) error {
 // - shortID - короткий идентификатор
 //
 // Возвращает запись apptypes.URLShortener и ошибку.
-func GetRecordByShortID(ctx context.Context, shortID string) (record apptypes.URLShortener, err error) {
-	if err := IsConnected(); err != nil {
+func (d *dbstore) GetRecordByShortID(ctx context.Context, shortID string) (record apptypes.URLShortener, err error) {
+	if err := d.IsConnected(); err != nil {
 		return record, err
 	}
 
-	err = dbPool.GetContext(ctx, &record, "SELECT idx, short_id, original_url, user_id, deleted FROM urls WHERE short_id = $1", shortID)
+	err = d.dbPool.GetContext(ctx, &record, "SELECT idx, short_id, original_url, user_id, deleted FROM urls WHERE short_id = $1", shortID)
 	return record, err
 }
 
@@ -153,12 +153,12 @@ func GetRecordByShortID(ctx context.Context, shortID string) (record apptypes.UR
 // - userID - идентификатор пользователя
 // - keys - массив ключей
 // Возвращает ошибку, если удаление не удалось.
-func DeleteRecords(ctx context.Context, userID string, keys []any) (err error) {
+func (d *dbstore) DeleteRecords(ctx context.Context, userID string, keys []any) (err error) {
 	if !config.UseDatabase() {
 		return nil
 	}
 
-	if err := IsConnected(); err != nil {
+	if err := d.IsConnected(); err != nil {
 		return err
 	}
 	// если ключи не переданы, возвращаем успех
@@ -172,9 +172,9 @@ func DeleteRecords(ctx context.Context, userID string, keys []any) (err error) {
 		return err
 	}
 	// rebinding query to adapt to the DB driver's bindvar type
-	query = dbPool.Rebind(query)
+	query = d.dbPool.Rebind(query)
 	// выполняем запрос
-	_, err = dbPool.Exec(query, args...)
+	_, err = d.dbPool.Exec(query, args...)
 
 	return err
 }
@@ -185,10 +185,10 @@ func DeleteRecords(ctx context.Context, userID string, keys []any) (err error) {
 // - ctx - контекст
 //
 // Возвращает массив apptypes.URLShortener и ошибку.
-func GetRecords(ctx context.Context) (data []apptypes.URLShortener, err error) {
-	if err := IsConnected(); err != nil {
+func (d *dbstore) GetRecords(ctx context.Context) (data []apptypes.URLShortener, err error) {
+	if err := d.IsConnected(); err != nil {
 		return nil, err
 	}
-	err = dbPool.GetContext(ctx, &data, "SELECT idx, short_id, original_url, user_id, deleted FROM urls")
+	err = d.dbPool.GetContext(ctx, &data, "SELECT idx, short_id, original_url, user_id, deleted FROM urls")
 	return data, err
 }

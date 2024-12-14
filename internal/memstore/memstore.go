@@ -53,7 +53,7 @@ func (u *store) Clear() {
 	// очищаем файловое хранилище
 	filestorage.Clear()
 	// очищаем базу данных
-	db.Clear()
+	db.PGStore.Clear()
 
 	// очищаем хранилище
 	u.records = make([]apptypes.URLShortener, 0)
@@ -102,7 +102,7 @@ func (u *store) AddRecord(record apptypes.URLShortener) (addedRecord apptypes.UR
 	}
 
 	// Сохраняем в базу данных
-	err1 := db.AddRecord(record)
+	err1 := db.PGStore.AddRecord(record)
 	if err1 != nil {
 		log.Error().Err(err1).Msg("Add() AddRecord")
 	}
@@ -207,7 +207,7 @@ func (u *store) delete(userID, shortID string) error {
 	filestorage.DumpRecords(u.records)
 
 	// Сохраняем в базу данных
-	err1 := db.UpdateRecord(u.records[idx])
+	err1 := db.PGStore.UpdateRecord(u.records[idx])
 	// log.Info().Msgf("DEL >>> Record %#v deleted", u.Records[idx])
 	if err1 != nil {
 		log.Error().Err(err1).Msg("DeleteKeysFromStore")
