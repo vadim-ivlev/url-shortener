@@ -22,8 +22,19 @@ CREATE TABLE IF NOT EXISTS urls (
 );
 `
 
-// db - пул соединений с базой данных
-var db *sqlx.DB = nil
+// dbPool - пул соединений с базой данных
+var dbPool *sqlx.DB = nil
+
+// dbstore - структура для хранения данных в базе данных.
+type dbstore struct {
+	// dbPool - пул соединений с базой данных
+	dbPool *sqlx.DB
+}
+
+// New создает новое хранилище Urls.
+func New() *dbstore {
+	return &dbstore{}
+}
 
 // Connect - устанавливает соединение с базой данных
 func Connect() (err error) {
@@ -32,30 +43,30 @@ func Connect() (err error) {
 		return nil
 	}
 	Disconnect()
-	db, err = sqlx.Connect("postgres", config.Params.DatabaseDSN)
+	dbPool, err = sqlx.Connect("postgres", config.Params.DatabaseDSN)
 	if err != nil {
 		return err
 	}
 	// Выполняем инициализацию базы данных
-	_, err = db.Exec(initSQL)
+	_, err = dbPool.Exec(initSQL)
 	return err
 }
 
 // Disconnect - закрывает соединение с базой данных
 func Disconnect() {
-	if db != nil {
-		db.Close()
+	if dbPool != nil {
+		dbPool.Close()
 	}
-	db = nil
+	dbPool = nil
 }
 
 // IsConnected - проверяет, установлено ли соединение с базой данных
 func IsConnected() error {
 	// return db != nil && db.Ping() == nil
-	if db == nil {
+	if dbPool == nil {
 		return errors.New("no connection to DB")
 	}
-	return db.Ping()
+	return dbPool.Ping()
 }
 
 // Clear - очищает таблицу urls
@@ -69,7 +80,7 @@ func Clear() error {
 	if err := IsConnected(); err != nil {
 		return err
 	}
-	_, err := db.Exec("DELETE FROM urls")
+	_, err := dbPool.Exec("DELETE FROM urls")
 	return err
 }
 
@@ -89,7 +100,7 @@ func AddRecord(record apptypes.URLShortener) error {
 		return err
 	}
 
-	_, err := db.Exec("INSERT INTO urls (idx, short_id, original_url, user_id, deleted) VALUES ($1, $2, $3, $4, $5)", record.Idx, record.ShortID, record.OriginalURL, record.UserID, record.Deleted)
+	_, err := dbPool.Exec("INSERT INTO urls (idx, short_id, original_url, user_id, deleted) VALUES ($1, $2, $3, $4, $5)", record.Idx, record.ShortID, record.OriginalURL, record.UserID, record.Deleted)
 	return err
 }
 
@@ -112,7 +123,7 @@ func UpdateRecord(record apptypes.URLShortener) error {
 		return err
 	}
 
-	_, err := db.Exec("UPDATE urls SET idx = $1,  short_id = $2, original_url = $3, user_id = $4, deleted = $5 WHERE short_id = $6", record.Idx, record.ShortID, record.OriginalURL, record.UserID, record.Deleted, record.ShortID)
+	_, err := dbPool.Exec("UPDATE urls SET idx = $1,  short_id = $2, original_url = $3, user_id = $4, deleted = $5 WHERE short_id = $6", record.Idx, record.ShortID, record.OriginalURL, record.UserID, record.Deleted, record.ShortID)
 	return err
 }
 
@@ -128,7 +139,7 @@ func GetRecordByShortID(ctx context.Context, shortID string) (record apptypes.UR
 		return record, err
 	}
 
-	err = db.GetContext(ctx, &record, "SELECT idx, short_id, original_url, user_id, deleted FROM urls WHERE short_id = $1", shortID)
+	err = dbPool.GetContext(ctx, &record, "SELECT idx, short_id, original_url, user_id, deleted FROM urls WHERE short_id = $1", shortID)
 	return record, err
 }
 
@@ -161,9 +172,9 @@ func DeleteRecords(ctx context.Context, userID string, keys []any) (err error) {
 		return err
 	}
 	// rebinding query to adapt to the DB driver's bindvar type
-	query = db.Rebind(query)
+	query = dbPool.Rebind(query)
 	// выполняем запрос
-	_, err = db.Exec(query, args...)
+	_, err = dbPool.Exec(query, args...)
 
 	return err
 }
@@ -178,6 +189,6 @@ func GetRecords(ctx context.Context) (data []apptypes.URLShortener, err error) {
 	if err := IsConnected(); err != nil {
 		return nil, err
 	}
-	err = db.GetContext(ctx, &data, "SELECT idx, short_id, original_url, user_id, deleted FROM urls")
+	err = dbPool.GetContext(ctx, &data, "SELECT idx, short_id, original_url, user_id, deleted FROM urls")
 	return data, err
 }
