@@ -44,7 +44,7 @@ func (d *dbstore) Connect() (err error) {
 		return nil
 	}
 	d.Disconnect()
-	d.dbPool, err = sqlx.Connect("sqlite", "urls.db")
+	d.dbPool, err = sqlx.Connect("sqlite", ":memory:")
 	if err != nil {
 		return err
 	}
