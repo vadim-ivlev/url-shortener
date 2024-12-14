@@ -43,16 +43,16 @@ func TestDeleteKeys(t *testing.T) {
 	err = AddRecord(apptypes.URLShortener{Idx: 12, ShortID: "short_id12", OriginalURL: "original_url12", UserID: "user_t", Deleted: 0})
 	assert.NoError(t, err)
 
-	err = DeleteShortIDs(context.Background(), "user_t", []any{"short_id10", "short_id11"})
+	err = DeleteRecords(context.Background(), "user_t", []any{"short_id10", "short_id11"})
 	assert.NoError(t, err)
 
-	record, _ := GetByShortID(context.Background(), "short_id10")
+	record, _ := GetRecordByShortID(context.Background(), "short_id10")
 	assert.EqualValues(t, record.Deleted, 1)
 
-	record, _ = GetByShortID(context.Background(), "short_id11")
+	record, _ = GetRecordByShortID(context.Background(), "short_id11")
 	assert.EqualValues(t, record.Deleted, 1)
 
-	record, _ = GetByShortID(context.Background(), "short_id12")
+	record, _ = GetRecordByShortID(context.Background(), "short_id12")
 	assert.EqualValues(t, record.Deleted, 0)
 
 }

@@ -93,6 +93,9 @@ func AddRecord(record apptypes.URLShortener) error {
 	return err
 }
 
+// // AddRecords добавляет несколько записей в хранилище.
+// AddRecords(records []URLShortener) (numAdded int, errs []error)
+
 // UpdateRecord - обновляет запись в базе данных.
 //
 // Параметры:
@@ -113,14 +116,14 @@ func UpdateRecord(record apptypes.URLShortener) error {
 	return err
 }
 
-// GetByShortID - возвращает запись из базы данных по short_id.
+// GetRecordByShortID - возвращает запись из базы данных по short_id.
 //
 // Параметры:
 // - ctx - контекст
 // - shortID - короткий идентификатор
 //
 // Возвращает запись apptypes.URLShortener и ошибку.
-func GetByShortID(ctx context.Context, shortID string) (record apptypes.URLShortener, err error) {
+func GetRecordByShortID(ctx context.Context, shortID string) (record apptypes.URLShortener, err error) {
 	if err := IsConnected(); err != nil {
 		return record, err
 	}
@@ -129,28 +132,17 @@ func GetByShortID(ctx context.Context, shortID string) (record apptypes.URLShort
 	return record, err
 }
 
-// GetRecords - возвращает данные из базы данных в виде массива apptypes.URLShortener.
-//
-// Параметры:
-// - ctx - контекст
-//
-// Возвращает массив apptypes.URLShortener и ошибку.
-func GetRecords(ctx context.Context) (data []apptypes.URLShortener, err error) {
-	if err := IsConnected(); err != nil {
-		return nil, err
-	}
-	err = db.GetContext(ctx, &data, "SELECT idx, short_id, original_url, user_id, deleted FROM urls")
-	return data, err
-}
+// // GetRecordsByUserID извлекает все записи для пользователя.
+// GetRecordsByUserID(userID string) (records []URLShortener)
 
-// DeleteShortIDs - помечает записи в базе данных как удаленные
+// DeleteRecords - помечает записи в базе данных как удаленные
 // добавляя префикс "-" к short_id.
 // Параметры:
 // - ctx - контекст
 // - userID - идентификатор пользователя
 // - keys - массив ключей
 // Возвращает ошибку, если удаление не удалось.
-func DeleteShortIDs(ctx context.Context, userID string, keys []any) (err error) {
+func DeleteRecords(ctx context.Context, userID string, keys []any) (err error) {
 	if !config.UseDatabase() {
 		return nil
 	}
@@ -174,4 +166,18 @@ func DeleteShortIDs(ctx context.Context, userID string, keys []any) (err error) 
 	_, err = db.Exec(query, args...)
 
 	return err
+}
+
+// GetRecords - возвращает данные из базы данных в виде массива apptypes.URLShortener.
+//
+// Параметры:
+// - ctx - контекст
+//
+// Возвращает массив apptypes.URLShortener и ошибку.
+func GetRecords(ctx context.Context) (data []apptypes.URLShortener, err error) {
+	if err := IsConnected(); err != nil {
+		return nil, err
+	}
+	err = db.GetContext(ctx, &data, "SELECT idx, short_id, original_url, user_id, deleted FROM urls")
+	return data, err
 }

@@ -417,7 +417,7 @@ func TestAPIShortenBatchHandler(t *testing.T) {
 				var found bool
 
 				// найти shortID в базе данных
-				_, err := db.GetByShortID(context.Background(), shortID)
+				_, err := db.GetRecordByShortID(context.Background(), shortID)
 				if err == nil {
 					found = true
 				}

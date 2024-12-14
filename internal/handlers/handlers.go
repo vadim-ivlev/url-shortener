@@ -514,7 +514,7 @@ func deleteShortIDs(ctx context.Context, userID string, ids []any) (err error) {
 		log.Warn().Err(err).Msg("Cannot save data to filestorage")
 	}
 
-	err = db.DeleteShortIDs(ctx, userID, ids)
+	err = db.DeleteRecords(ctx, userID, ids)
 	if err != nil {
 		log.Warn().Err(err).Msg("Cannot delete shortID from the database")
 	}
