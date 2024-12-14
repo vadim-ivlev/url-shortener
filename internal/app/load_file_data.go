@@ -9,7 +9,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/vadim-ivlev/url-shortener/internal/apptypes"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
-	"github.com/vadim-ivlev/url-shortener/internal/memstore"
 )
 
 // LoadFileDataToStorage - загружает данные из файлового хранилища в storage.
@@ -42,7 +41,7 @@ func LoadFileDataToStorage() (err error) {
 
 		// Добавляем запись в карту хранилища
 		// storage.Set(record.ShortID, record.OriginalURL)
-		memstore.Store.AddRecord(record)
+		MemStore.AddRecord(record)
 
 	}
 

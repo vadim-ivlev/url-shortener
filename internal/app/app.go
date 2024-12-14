@@ -33,10 +33,10 @@ func InitApp() {
 	config.PrintParams()
 
 	// Создать хранилище в памяти
-	memstore.Store = memstore.NewStore()
+	MemStore = memstore.NewStore()
 
 	// Почистить хранилища
-	memstore.Store.Clear()
+	MemStore.Clear()
 
 	// Подключиться к базе данных
 	err := db.Connect()
@@ -58,7 +58,7 @@ func InitApp() {
 	}
 
 	// Печать содержимого хранилища в лог
-	memstore.Store.PrintRecords(5)
+	MemStore.PrintRecords(5)
 }
 
 // Получить короткий URL из shortID

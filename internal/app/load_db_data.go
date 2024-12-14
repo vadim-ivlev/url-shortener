@@ -8,7 +8,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
 	"github.com/vadim-ivlev/url-shortener/internal/db"
-	"github.com/vadim-ivlev/url-shortener/internal/memstore"
 )
 
 // LoadDBDataToStorage - загружает данные из базы данных в storage.
@@ -31,7 +30,7 @@ func LoadDBDataToStorage(ctx context.Context) (err error) {
 		log.Warn().Err(err).Msg("loadDataFromDB(). Cannot get data from DB")
 		return err
 	}
-	numAdded, errs := memstore.Store.AddRecords(records)
+	numAdded, errs := MemStore.AddRecords(records)
 	if len(errs) > 0 {
 		log.Error().Errs("errors", errs).Msg("loadDataFromDB(). Errors while adding records to storage")
 	}

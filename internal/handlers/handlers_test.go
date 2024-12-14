@@ -19,7 +19,6 @@ import (
 	"github.com/vadim-ivlev/url-shortener/internal/config"
 	"github.com/vadim-ivlev/url-shortener/internal/db"
 	"github.com/vadim-ivlev/url-shortener/internal/logger"
-	"github.com/vadim-ivlev/url-shortener/internal/memstore"
 	"github.com/vadim-ivlev/url-shortener/internal/shortener"
 )
 
@@ -121,7 +120,7 @@ func TestShortenURLHandler(t *testing.T) {
 	skipCI(t)
 
 	// Очищаем хранилище
-	memstore.Store.Clear()
+	app.MemStore.Clear()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -137,14 +136,14 @@ func TestShortenURLHandler(t *testing.T) {
 		})
 	}
 
-	memstore.Store.PrintRecords(3)
+	app.MemStore.PrintRecords(3)
 }
 
 func TestAPIShortenHandler(t *testing.T) {
 	skipCI(t)
 
 	// Очищаем хранилище
-	memstore.Store.Clear()
+	app.MemStore.Clear()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -161,7 +160,7 @@ func TestAPIShortenHandler(t *testing.T) {
 		})
 	}
 
-	memstore.Store.PrintRecords(3)
+	app.MemStore.PrintRecords(3)
 }
 
 func TestRedirectHandler(t *testing.T) {
@@ -299,7 +298,7 @@ func TestAPIShortenBatchHandler(t *testing.T) {
 	}
 
 	// Очистим сторадж
-	memstore.Store.Clear()
+	app.MemStore.Clear()
 
 	// Тестовые входные данные
 	var emptyInput []inpRec = nil
@@ -497,11 +496,11 @@ func TestAPIUserURLsHandler(t *testing.T) {
 	for _, tt := range testsU {
 		t.Run(tt.name, func(t *testing.T) {
 			// Очистить хранилище
-			memstore.Store.Clear()
+			app.MemStore.Clear()
 
 			// Добавить записи в хранилище
 			for shortID, originalURL := range tt.args.inputRecords {
-				memstore.Store.AddRecord(apptypes.URLShortener{ShortID: shortID, OriginalURL: originalURL, UserID: userID})
+				app.MemStore.AddRecord(apptypes.URLShortener{ShortID: shortID, OriginalURL: originalURL, UserID: userID})
 			}
 
 			req := httptest.NewRequest(http.MethodGet, "/api/user/urls", nil)

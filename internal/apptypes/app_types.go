@@ -24,6 +24,8 @@ type MemStoreInterface interface {
 	GetRecordsByUserID(userID string) (records []URLShortener)
 	// DeleteRecords удаляет несколько записей пользователя по их shortID.
 	DeleteRecords(userID string, shortIDs []any) error
+	// GetRecords возвращает все записи.
+	GetRecords() (records []URLShortener)
 	// PrintRecords выводит содержимое нескольких записей.
 	PrintRecords(limit int)
 }
