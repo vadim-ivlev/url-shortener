@@ -323,3 +323,6 @@ Content-Type: application/json
 - Для максимального наполнения буфера объектов обновления используйте паттерн `fanIn`.
 
 git merge iter15-memstore-1
+
+
+TODO: delete idx field

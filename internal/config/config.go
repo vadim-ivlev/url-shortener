@@ -16,6 +16,7 @@ type config struct {
 	BaseURL         string `env:"BASE_URL"`
 	FileStoragePath string `env:"FILE_STORAGE_PATH"`
 	DatabaseDSN     string `env:"DATABASE_DSN"`
+	MemStore        string `env:"MEM_STORE"`
 }
 
 // Params - переменная для хранения параметров приложения
@@ -27,6 +28,7 @@ func ParseCommandLine() {
 	flag.StringVar(&Params.BaseURL, "b", "http://localhost:8080", "Base URL")
 	flag.StringVar(&Params.FileStoragePath, "f", "./data/file-storage.txt", "File storage path")
 	flag.StringVar(&Params.DatabaseDSN, "d", "", "Database DSN")
+	flag.StringVar(&Params.MemStore, "m", "array", "Memory store type")
 	flag.Parse()
 }
 
