@@ -21,7 +21,7 @@ type MemStoreInterface interface {
 	// GetRecordByShortID извлекает запись по её shortID.
 	GetRecordByShortID(shortID string) (record *URLShortener, err error)
 	// GetRecordsByUserID извлекает все записи для пользователя.
-	GetRecordsByUserID(userID string) (records []URLShortener)
+	GetRecordsByUserID(userID string) (records []URLShortener, err error)
 	// DeleteRecords удаляет несколько записей пользователя по их shortID.
 	DeleteRecords(userID string, shortIDs []any) error
 	// GetRecords возвращает все записи.

@@ -149,7 +149,8 @@ func (u *store) GetRecordByShortID(shortID string) (record *apptypes.URLShortene
 //
 // Возвращает:
 // - массив записей пользователя.
-func (u *store) GetRecordsByUserID(userID string) (records []apptypes.URLShortener) {
+// - ошибку.
+func (u *store) GetRecordsByUserID(userID string) (records []apptypes.URLShortener, err error) {
 	u.mutex.Lock()
 	defer u.mutex.Unlock()
 
@@ -160,7 +161,7 @@ func (u *store) GetRecordsByUserID(userID string) (records []apptypes.URLShorten
 		}
 	}
 
-	return result
+	return result, nil
 }
 
 // delete - делает пометку записи как удаленную.

@@ -185,8 +185,23 @@ func (d *dbstore) GetRecordByShortID(shortID string) (record *apptypes.URLShorte
 	return record, err
 }
 
-// // GetRecordsByUserID извлекает все записи для пользователя.
-// GetRecordsByUserID(userID string) (records []URLShortener)
+// GetRecordsByUserID возвращает все записи пользователя.
+//
+// Параметры:
+// - userID - идентификатор пользователя.
+//
+// Возвращает:
+// - массив записей пользователя.
+// - ошибку, если записи не найдены.
+func (d *dbstore) GetRecordsByUserID(userID string) (records []apptypes.URLShortener, err error) {
+	if err := d.IsConnected(); err != nil {
+		return records, err
+	}
+
+	err = d.dbPool.Select(&records, "SELECT idx, short_id, original_url, user_id, deleted FROM urls WHERE user_id = $1", userID)
+
+	return records, err
+}
 
 // DeleteRecords - помечает записи в базе данных как удаленные
 // добавляя префикс "-" к short_id.
