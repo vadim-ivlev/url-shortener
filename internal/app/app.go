@@ -13,6 +13,7 @@ import (
 	"github.com/vadim-ivlev/url-shortener/internal/apptypes"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
 	"github.com/vadim-ivlev/url-shortener/internal/db"
+	"github.com/vadim-ivlev/url-shortener/internal/filestorage"
 	"github.com/vadim-ivlev/url-shortener/internal/logger"
 	"github.com/vadim-ivlev/url-shortener/internal/memstore"
 )
@@ -32,11 +33,6 @@ func InitApp() {
 	// Вывести параметры конфигурации в лог
 	config.PrintParams()
 
-	// Создать хранилище в памяти
-	MemStore = memstore.New()
-	// Почистить хранилища
-	// MemStore.Clear()
-
 	// Создать хранилище базы данных
 	db.PGStore = db.New()
 	// Подключиться к базе данных
@@ -45,6 +41,12 @@ func InitApp() {
 		log.Error().Err(err).Msg("Cannot connect to DB")
 		return
 	}
+
+	// Создать хранилище в памяти
+	MemStore = memstore.New()
+	// Почистить хранилища
+	//MemStore.Clear()
+	filestorage.Clear()
 
 	// Загрузить данные из файлового хранилища
 	err = LoadFileDataToStorage()

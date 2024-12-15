@@ -9,8 +9,6 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"github.com/vadim-ivlev/url-shortener/internal/apptypes"
-	"github.com/vadim-ivlev/url-shortener/internal/db"
-	"github.com/vadim-ivlev/url-shortener/internal/filestorage"
 	"github.com/vadim-ivlev/url-shortener/internal/shortener"
 )
 
@@ -45,10 +43,6 @@ func New() *mstore {
 
 // Clear очищает хранилище.
 func (u *mstore) Clear() (err error) {
-	// очищаем файловое хранилище
-	filestorage.Clear()
-	// очищаем базу данных
-	db.PGStore.Clear()
 
 	// очищаем хранилище
 	u.records = make([]apptypes.URLShortener, 0)
@@ -90,18 +84,6 @@ func (u *mstore) AddRecord(record apptypes.URLShortener) (addedRecord apptypes.U
 	// Добавляем запись в индексы
 	u.idxShortID.Add(record, record.Idx)
 	u.idxUserIDOriginalURL.Add(record, record.Idx)
-
-	// Сохраняем запись в файловое хранилище
-	err0 := filestorage.AddRecord(record)
-	if err0 != nil {
-		log.Error().Err(err0).Msg("Add() filestorage.AddRecord")
-	}
-
-	// Сохраняем в базу данных
-	err1 := db.PGStore.AddRecord(record)
-	if err1 != nil {
-		log.Error().Err(err1).Msg("Add() AddRecord")
-	}
 
 	return record, true, nil
 }
@@ -199,17 +181,6 @@ func (u *mstore) delete(userID, shortID string) error {
 	// Помечаем ключ как удаленный
 	u.records[idx].Deleted = 1
 
-	// Сохраняем запись в файловое хранилище
-	// TODO: too many writes
-	filestorage.DumpRecords(u.records)
-
-	// Сохраняем в базу данных
-	err1 := db.PGStore.UpdateRecord(u.records[idx])
-	// log.Info().Msgf("DEL >>> Record %#v deleted", u.Records[idx])
-	if err1 != nil {
-		log.Error().Err(err1).Msg("DeleteKeysFromStore")
-	}
-
 	return nil
 }
 
@@ -223,12 +194,13 @@ func (u *mstore) delete(userID, shortID string) error {
 // TODO: OPTIMISE:
 func (u *mstore) DeleteRecords(userID string, shortIDs []any) error {
 	for _, shortID := range shortIDs {
-		go func(shortID string) {
-			err := u.delete(userID, shortID)
-			if err != nil {
-				fmt.Println(err)
-			}
-		}(shortID.(string))
+		// go func(shortID string) {
+		// 	err := u.delete(userID, shortID)
+		// 	if err != nil {
+		// 		fmt.Println(err)
+		// 	}
+		// }(shortID.(string))
+		u.delete(userID, shortID.(string))
 	}
 
 	return nil

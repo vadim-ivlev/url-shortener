@@ -138,6 +138,7 @@ func (d *dbstore) AddRecord(record apptypes.URLShortener) (addedRecord apptypes.
 // Возвращает:
 // - количество добавленных записей.
 // - массив ошибок для записей которые не удалось добавить.
+// TODO: add all records at once
 func (d *dbstore) AddRecords(records []apptypes.URLShortener) (numAdded int, errs []error) {
 	for _, record := range records {
 		_, _, err := d.AddRecord(record)

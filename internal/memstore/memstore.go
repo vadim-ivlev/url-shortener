@@ -1,9 +1,14 @@
 package memstore
 
 import (
+	"context"
+
+	"github.com/rs/zerolog/log"
 	"github.com/vadim-ivlev/url-shortener/internal/apptypes"
 	"github.com/vadim-ivlev/url-shortener/internal/arraystore"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
+	"github.com/vadim-ivlev/url-shortener/internal/db"
+	"github.com/vadim-ivlev/url-shortener/internal/filestorage"
 	"github.com/vadim-ivlev/url-shortener/internal/litestore"
 )
 
@@ -30,17 +35,57 @@ func New() (st *memstore) {
 
 // Clear очищает хранилище.
 func (m *memstore) Clear() error {
+	// очищаем файловое хранилище
+	filestorage.Clear()
+	// очищаем базу данных
+	db.PGStore.Clear()
+	// очищаем хранилище
 	return actualStore.Clear()
 }
 
 // AddRecord добавляет запись в хранилище.
-func (m *memstore) AddRecord(record apptypes.URLShortener) (apptypes.URLShortener, bool, error) {
-	return actualStore.AddRecord(record)
+func (m *memstore) AddRecord(record apptypes.URLShortener) (addedRecord apptypes.URLShortener, created bool, err error) {
+	addedRecord, created, err = actualStore.AddRecord(record)
+	if err == nil {
+		// Сохраняем запись в файловое хранилище
+		err0 := filestorage.AddRecord(addedRecord)
+		if err0 != nil {
+			log.Error().Err(err0).Msg("Add() filestorage.AddRecord")
+		}
+
+		// Сохраняем в базу данных
+		err1 := db.PGStore.AddRecord(addedRecord)
+		if err1 != nil {
+			log.Error().Err(err1).Msg("Add() AddRecord")
+		}
+	}
+	return
 }
 
 // AddRecords добавляет несколько записей в хранилище.
-func (m *memstore) AddRecords(records []apptypes.URLShortener) (int, []error) {
-	return actualStore.AddRecords(records)
+func (m *memstore) AddRecords(records []apptypes.URLShortener) (numAdded int, errs []error) {
+	numAdded, errs = actualStore.AddRecords(records)
+	log.Info().Msgf("AddRecords() numAdded: %d", numAdded)
+
+	// Сохраняем записи в файловое хранилище
+	recs, err0 := actualStore.GetRecords()
+	if err0 != nil {
+		log.Error().Err(err0).Msg("AddRecords() actualStore.GetRecords")
+	} else {
+		err00 := filestorage.DumpRecords(recs)
+		if err00 != nil {
+			log.Error().Err(err00).Msg("AddRecords() filestorage.SaveRecords")
+		}
+	}
+
+	// Сохраняем записи в базу данных
+	numAdded1, errs1 := db.PGStore.AddRecords(records)
+	if len(errs1) > 0 {
+		log.Error().Msgf("AddRecords() db.PGStore.AddRecords: %v", errs1)
+	}
+	log.Info().Msgf("AddRecords() numAdded1: %d", numAdded1)
+
+	return
 }
 
 // GetRecordByShortID извлекает запись по её shortID.
@@ -54,8 +99,28 @@ func (m *memstore) GetRecordsByUserID(userID string) ([]apptypes.URLShortener, e
 }
 
 // DeleteRecords удаляет несколько записей пользователя по их shortID.
-func (m *memstore) DeleteRecords(userID string, shortIDs []interface{}) error {
-	return actualStore.DeleteRecords(userID, shortIDs)
+func (m *memstore) DeleteRecords(userID string, shortIDs []interface{}) (err error) {
+	err = actualStore.DeleteRecords(userID, shortIDs)
+
+	// получаем записи из хранилища
+	records, err0 := actualStore.GetRecords()
+	if err0 != nil {
+		log.Error().Err(err0).Msg("DeleteRecords() actualStore.GetRecords")
+	} else {
+		// сохраняем записи в файловое хранилище
+		err00 := filestorage.DumpRecords(records)
+		if err00 != nil {
+			log.Error().Err(err00).Msg("DeleteRecords() filestorage.SaveRecords")
+		}
+	}
+
+	// удаляем записи из базы данных
+	err1 := db.PGStore.DeleteRecords(context.Background(), userID, shortIDs)
+	if err1 != nil {
+		log.Error().Err(err1).Msg("DeleteRecords() db.PGStore.DeleteRecords")
+	}
+
+	return err
 }
 
 // GetRecords возвращает все записи.

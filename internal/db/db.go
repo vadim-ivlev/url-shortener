@@ -104,8 +104,18 @@ func (d *dbstore) AddRecord(record apptypes.URLShortener) (err error) {
 	return err
 }
 
-// // AddRecords добавляет несколько записей в хранилище.
-// AddRecords(records []URLShortener) (numAdded int, errs []error)
+// AddRecords добавляет несколько записей в хранилище.
+func (d *dbstore) AddRecords(records []apptypes.URLShortener) (numAdded int, errs []error) {
+	for _, record := range records {
+		err := d.AddRecord(record)
+		if err != nil {
+			errs = append(errs, err)
+		} else {
+			numAdded++
+		}
+	}
+	return numAdded, errs
+}
 
 // UpdateRecord - обновляет запись в базе данных.
 //
