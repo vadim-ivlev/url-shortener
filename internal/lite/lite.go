@@ -2,16 +2,18 @@ package lite
 
 import (
 	"errors"
+	"fmt"
 
 	_ "github.com/glebarez/go-sqlite"
 	"github.com/jmoiron/sqlx"
+	"github.com/rs/zerolog/log"
 	"github.com/vadim-ivlev/url-shortener/internal/apptypes"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
 	"github.com/vadim-ivlev/url-shortener/internal/shortener"
 )
 
 // Проверка на соответствие интерфейсу
-// var _ apptypes.MemStoreInterface = (*dbstore)(nil)
+var _ apptypes.MemStoreInterface = (*dbstore)(nil)
 
 // DSN - строка подключения к базе данных
 // var DSN = ":memory:"
@@ -239,10 +241,39 @@ func (d *dbstore) DeleteRecords(userID string, keys []any) (err error) {
 //
 // Возвращает массив apptypes.URLShortener и ошибку.
 func (d *dbstore) GetRecords() (data []apptypes.URLShortener, err error) {
-	data = []apptypes.URLShortener{}
 	if err := d.IsConnected(); err != nil {
 		return nil, err
 	}
 	err = d.dbPool.Select(&data, "SELECT idx, short_id, original_url, user_id, deleted FROM urls")
 	return data, err
+}
+
+// PrintRecords выводит содержимое хранилища в консоль.
+// limit - количество элементов, которые будут выведены.
+func (d *dbstore) PrintRecords(limit int) {
+	if err := d.IsConnected(); err != nil {
+		log.Error().Err(err).Msg("PrintRecords")
+		return
+	}
+
+	numRecords := 0
+	err := d.dbPool.Get(&numRecords, "SELECT COUNT(*) FROM urls")
+	if err != nil {
+		log.Error().Err(err).Msg("PrintRecords")
+		return
+	}
+
+	fmt.Printf("Memstore contains %d records\n", numRecords)
+
+	records := []apptypes.URLShortener{}
+	err = d.dbPool.Select(&records, "SELECT idx, short_id, original_url, user_id, deleted FROM urls LIMIT $1", limit)
+	if err != nil {
+		log.Error().Err(err).Msg("PrintRecords")
+		return
+	}
+
+	for i, record := range records {
+		fmt.Printf("#%2d %v\n", i, record)
+	}
+
 }

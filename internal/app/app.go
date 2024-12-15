@@ -33,7 +33,7 @@ func InitApp() {
 	config.PrintParams()
 
 	// Создать хранилище в памяти
-	MemStore = memstore.NewStore()
+	MemStore = memstore.New()
 	// Почистить хранилища
 	// MemStore.Clear()
 

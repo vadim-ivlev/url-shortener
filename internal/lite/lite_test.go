@@ -71,4 +71,6 @@ func TestDeleteKeys(t *testing.T) {
 	assert.NoError(t, err)
 	fmt.Printf("recs: %+v\n", recs)
 
+	PGStore.PrintRecords(10)
+
 }

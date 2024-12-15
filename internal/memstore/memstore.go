@@ -31,8 +31,8 @@ type store struct {
 	idxUserIDOriginalURL *Index
 }
 
-// NewStore создает новое хранилище Urls.
-func NewStore() *store {
+// New создает новое хранилище Urls.
+func New() *store {
 	return &store{
 		records:              make([]apptypes.URLShortener, 0),
 		idxShortID:           NewIndex(apptypes.ShortIDKeyFunc),
