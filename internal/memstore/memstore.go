@@ -16,11 +16,11 @@ import (
 
 var ErrRecordNotFound = errors.New("record not found")
 
-// store - структура для хранения данных в памяти.
+// mstore - структура для хранения данных в памяти.
 // Содержит массив записей UrlShortener.
 // Потокобезопасна.
 // Имеет два уникальных индекса для быстрого поиска записей по shortID и UserID+originalURL.
-type store struct {
+type mstore struct {
 	// Записи
 	records []apptypes.URLShortener
 	// Мьютекс для защиты записей
@@ -32,8 +32,8 @@ type store struct {
 }
 
 // New создает новое хранилище Urls.
-func New() *store {
-	return &store{
+func New() *mstore {
+	return &mstore{
 		records:              make([]apptypes.URLShortener, 0),
 		idxShortID:           NewIndex(apptypes.ShortIDKeyFunc),
 		idxUserIDOriginalURL: NewIndex(apptypes.UserIDOriginalURLKeyFunc),
@@ -41,7 +41,7 @@ func New() *store {
 }
 
 // Clear очищает хранилище.
-func (u *store) Clear() (err error) {
+func (u *mstore) Clear() (err error) {
 	// очищаем файловое хранилище
 	filestorage.Clear()
 	// очищаем базу данных
@@ -65,7 +65,7 @@ func (u *store) Clear() (err error) {
 // - true, если запись была добавлена, false, если запись уже есть в хранилище.
 // - ошибку, если запись не удалось добавить.
 // TODO: get rid of methods
-func (u *store) AddRecord(record apptypes.URLShortener) (addedRecord apptypes.URLShortener, created bool, err error) {
+func (u *mstore) AddRecord(record apptypes.URLShortener) (addedRecord apptypes.URLShortener, created bool, err error) {
 	u.mutex.Lock()
 	defer u.mutex.Unlock()
 
@@ -111,7 +111,7 @@ func (u *store) AddRecord(record apptypes.URLShortener) (addedRecord apptypes.UR
 // Возвращает:
 // - количество добавленных записей.
 // - массив ошибок для записей которые не удалось добавить.
-func (u *store) AddRecords(records []apptypes.URLShortener) (numAdded int, errs []error) {
+func (u *mstore) AddRecords(records []apptypes.URLShortener) (numAdded int, errs []error) {
 	for _, record := range records {
 		_, _, err := u.AddRecord(record)
 		if err != nil {
@@ -131,7 +131,7 @@ func (u *store) AddRecords(records []apptypes.URLShortener) (numAdded int, errs 
 // Возвращает:
 // - запись, если она найдена или nil
 // - ошибку, если запись не найдена.
-func (u *store) GetRecordByShortID(shortID string) (record *apptypes.URLShortener, err error) {
+func (u *mstore) GetRecordByShortID(shortID string) (record *apptypes.URLShortener, err error) {
 	u.mutex.Lock()
 	defer u.mutex.Unlock()
 
@@ -150,7 +150,7 @@ func (u *store) GetRecordByShortID(shortID string) (record *apptypes.URLShortene
 // Возвращает:
 // - массив записей пользователя.
 // - ошибку.
-func (u *store) GetRecordsByUserID(userID string) (records []apptypes.URLShortener, err error) {
+func (u *mstore) GetRecordsByUserID(userID string) (records []apptypes.URLShortener, err error) {
 	u.mutex.Lock()
 	defer u.mutex.Unlock()
 
@@ -172,7 +172,7 @@ func (u *store) GetRecordsByUserID(userID string) (records []apptypes.URLShorten
 // - key - ключ
 //
 // Возвращает ошибку
-func (u *store) delete(userID, shortID string) error {
+func (u *mstore) delete(userID, shortID string) error {
 	// Блокируем доступ к хранилищу
 	u.mutex.Lock()
 	defer u.mutex.Unlock()
@@ -218,7 +218,7 @@ func (u *store) delete(userID, shortID string) error {
 //
 // Возвращает ошибку
 // TODO: OPTIMISE:
-func (u *store) DeleteRecords(userID string, shortIDs []any) error {
+func (u *mstore) DeleteRecords(userID string, shortIDs []any) error {
 	for _, shortID := range shortIDs {
 		go func(shortID string) {
 			err := u.delete(userID, shortID)
@@ -232,7 +232,7 @@ func (u *store) DeleteRecords(userID string, shortIDs []any) error {
 }
 
 // GetRecords возвращает все записи.
-func (u *store) GetRecords() (records []apptypes.URLShortener, err error) {
+func (u *mstore) GetRecords() (records []apptypes.URLShortener, err error) {
 	u.mutex.Lock()
 	defer u.mutex.Unlock()
 	return u.records, nil
@@ -240,7 +240,7 @@ func (u *store) GetRecords() (records []apptypes.URLShortener, err error) {
 
 // PrintRecords выводит содержимое хранилища в консоль.
 // limit - количество элементов, которые будут выведены.
-func (u *store) PrintRecords(limit int) {
+func (u *mstore) PrintRecords(limit int) {
 	log.Info().Msgf("Memstore contains %d records", len(u.records))
 	u.mutex.Lock()
 	defer u.mutex.Unlock()
