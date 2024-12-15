@@ -13,6 +13,10 @@ import (
 
 // var _ apptypes.MemStoreInterface = (*dbstore)(nil)
 
+// DSN - строка подключения к базе данных
+// var DSN = ":memory:"
+var DSN = "url-shortener.db"
+
 var initSQL = `
 -- urls - хранит список уникальных URL и их коротких ключей
 CREATE TABLE IF NOT EXISTS urls (
@@ -46,7 +50,7 @@ func (d *dbstore) Connect() (err error) {
 		return nil
 	}
 	d.Disconnect()
-	d.dbPool, err = sqlx.Connect("sqlite", ":memory:")
+	d.dbPool, err = sqlx.Connect("sqlite", DSN)
 	if err != nil {
 		return err
 	}
@@ -111,7 +115,7 @@ func (d *dbstore) AddRecord(record apptypes.URLShortener) (addedRecord apptypes.
 
 	// Если record.ShortID пустой, то генерируем новый
 	if record.ShortID == "" {
-		record.ShortID = shortener.Shorten(record.UserID + "@" + record.OriginalURL)
+		record.ShortID = shortener.Shorten(apptypes.UserIDOriginalURLKeyFunc(record))
 	}
 
 	// Добавляем запись в хранилище

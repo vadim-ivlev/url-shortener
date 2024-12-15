@@ -29,3 +29,25 @@ type MemStoreInterface interface {
 	// PrintRecords выводит содержимое нескольких записей.
 	PrintRecords(limit int)
 }
+
+// ShortIDKeyFunc - функция для вычисления ключа для индекса по shortID.
+//
+// Параметры:
+// - record - запись для вычисления ключа.
+//
+// Возвращает:
+// - ключ для индекса.
+func ShortIDKeyFunc(record URLShortener) string {
+	return record.ShortID
+}
+
+// UserIDOriginalURLKeyFunc - функция для вычисления ключа для индекса по UserID+originalURL.
+//
+// Параметры:
+// - record - запись для вычисления ключа.
+//
+// Возвращает:
+// - ключ для индекса.
+func UserIDOriginalURLKeyFunc(record URLShortener) string {
+	return record.UserID + "@" + record.OriginalURL
+}

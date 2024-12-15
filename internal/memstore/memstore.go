@@ -31,34 +31,12 @@ type store struct {
 	idxUserIDOriginalURL *Index
 }
 
-// idxShortIDKeyFunc - функция для вычисления ключа для индекса по shortID.
-//
-// Параметры:
-// - record - запись для вычисления ключа.
-//
-// Возвращает:
-// - ключ для индекса.
-func idxShortIDKeyFunc(record apptypes.URLShortener) string {
-	return record.ShortID
-}
-
-// idxUserIDOriginalURLKeyFunc - функция для вычисления ключа для индекса по UserID+originalURL.
-//
-// Параметры:
-// - record - запись для вычисления ключа.
-//
-// Возвращает:
-// - ключ для индекса.
-func idxUserIDOriginalURLKeyFunc(record apptypes.URLShortener) string {
-	return record.UserID + "@" + record.OriginalURL
-}
-
 // NewStore создает новое хранилище Urls.
 func NewStore() *store {
 	return &store{
 		records:              make([]apptypes.URLShortener, 0),
-		idxShortID:           NewIndex(idxShortIDKeyFunc),
-		idxUserIDOriginalURL: NewIndex(idxUserIDOriginalURLKeyFunc),
+		idxShortID:           NewIndex(apptypes.ShortIDKeyFunc),
+		idxUserIDOriginalURL: NewIndex(apptypes.UserIDOriginalURLKeyFunc),
 	}
 }
 
@@ -72,8 +50,8 @@ func (u *store) Clear() {
 	// очищаем хранилище
 	u.records = make([]apptypes.URLShortener, 0)
 	// пересоздаем индексы
-	u.idxShortID = NewIndex(idxShortIDKeyFunc)
-	u.idxUserIDOriginalURL = NewIndex(idxUserIDOriginalURLKeyFunc)
+	u.idxShortID = NewIndex(apptypes.ShortIDKeyFunc)
+	u.idxUserIDOriginalURL = NewIndex(apptypes.UserIDOriginalURLKeyFunc)
 }
 
 // AddRecord добавляет запись в хранилище.
@@ -97,7 +75,7 @@ func (u *store) AddRecord(record apptypes.URLShortener) (addedRecord apptypes.UR
 
 	// Если record.ShortID пустой, то генерируем новый
 	if record.ShortID == "" {
-		record.ShortID = shortener.Shorten(idxUserIDOriginalURLKeyFunc(record))
+		record.ShortID = shortener.Shorten(apptypes.UserIDOriginalURLKeyFunc(record))
 	}
 	// Вычисляем idx
 	record.Idx = int64(len(u.records))

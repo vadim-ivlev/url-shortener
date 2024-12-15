@@ -90,17 +90,17 @@ func (d *dbstore) Clear() error {
 // - record - запись для сохранения.
 //
 // Возвращает ошибку, если запись не удалась.
-func (d *dbstore) AddRecord(record apptypes.URLShortener) error {
+func (d *dbstore) AddRecord(record apptypes.URLShortener) (err error) {
 	// Проверяем нужно ли сохранять запись в файловое хранилище
 	if !config.UseDatabase() {
 		return nil
 	}
 
-	if err := d.IsConnected(); err != nil {
+	if err = d.IsConnected(); err != nil {
 		return err
 	}
 
-	_, err := d.dbPool.Exec("INSERT INTO urls (idx, short_id, original_url, user_id, deleted) VALUES ($1, $2, $3, $4, $5)", record.Idx, record.ShortID, record.OriginalURL, record.UserID, record.Deleted)
+	_, err = d.dbPool.Exec("INSERT INTO urls (idx, short_id, original_url, user_id, deleted) VALUES ($1, $2, $3, $4, $5)", record.Idx, record.ShortID, record.OriginalURL, record.UserID, record.Deleted)
 	return err
 }
 
