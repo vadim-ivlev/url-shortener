@@ -14,6 +14,9 @@ import (
 	"github.com/vadim-ivlev/url-shortener/internal/shortener"
 )
 
+// Проверка на соответствие интерфейсу
+var _ apptypes.MemStoreInterface = (*mstore)(nil)
+
 var ErrRecordNotFound = errors.New("record not found")
 
 // mstore - структура для хранения данных в памяти.
