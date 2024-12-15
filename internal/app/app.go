@@ -11,10 +11,10 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/vadim-ivlev/url-shortener/internal/apptypes"
-	"github.com/vadim-ivlev/url-shortener/internal/arraystore"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
 	"github.com/vadim-ivlev/url-shortener/internal/db"
 	"github.com/vadim-ivlev/url-shortener/internal/logger"
+	"github.com/vadim-ivlev/url-shortener/internal/memstore"
 )
 
 // MemStore - хранилище записей URLShortener в оперативной памяти.
@@ -33,7 +33,7 @@ func InitApp() {
 	config.PrintParams()
 
 	// Создать хранилище в памяти
-	MemStore = arraystore.New()
+	MemStore = memstore.New()
 	// Почистить хранилища
 	// MemStore.Clear()
 
