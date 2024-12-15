@@ -1,4 +1,4 @@
-package memstore
+package arraystore
 
 import "github.com/vadim-ivlev/url-shortener/internal/apptypes"
 
