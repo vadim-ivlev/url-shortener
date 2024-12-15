@@ -31,10 +31,24 @@ type store struct {
 	idxUserIDOriginalURL *Index
 }
 
+// idxShortIDKeyFunc - функция для вычисления ключа для индекса по shortID.
+//
+// Параметры:
+// - record - запись для вычисления ключа.
+//
+// Возвращает:
+// - ключ для индекса.
 func idxShortIDKeyFunc(record apptypes.URLShortener) string {
 	return record.ShortID
 }
 
+// idxUserIDOriginalURLKeyFunc - функция для вычисления ключа для индекса по UserID+originalURL.
+//
+// Параметры:
+// - record - запись для вычисления ключа.
+//
+// Возвращает:
+// - ключ для индекса.
 func idxUserIDOriginalURLKeyFunc(record apptypes.URLShortener) string {
 	return record.UserID + "@" + record.OriginalURL
 }
@@ -76,7 +90,7 @@ func (u *store) AddRecord(record apptypes.URLShortener) (addedRecord apptypes.UR
 	u.mutex.Lock()
 	defer u.mutex.Unlock()
 
-	// Проверяем, есть ли уже такая запись в хранилище
+	// Проверяем, есть ли уже такая запись в хранилище по UserID+originalURL
 	if idx, ok := u.idxUserIDOriginalURL.Get(record); ok {
 		return u.records[idx], false, nil
 	}

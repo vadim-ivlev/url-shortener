@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 
-	"github.com/jmoiron/sqlx"
-	// _ "github.com/lib/pq"
 	_ "github.com/glebarez/go-sqlite"
+	"github.com/jmoiron/sqlx"
 	"github.com/vadim-ivlev/url-shortener/internal/apptypes"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
+	"github.com/vadim-ivlev/url-shortener/internal/shortener"
 )
+
+// var _ apptypes.MemStoreInterface = (*dbstore)(nil)
 
 var initSQL = `
 -- urls - хранит список уникальных URL и их коротких ключей
@@ -91,18 +93,35 @@ func (d *dbstore) Clear() error {
 // - record - запись для сохранения.
 //
 // Возвращает ошибку, если запись не удалась.
-func (d *dbstore) AddRecord(record apptypes.URLShortener) error {
+func (d *dbstore) AddRecord(record apptypes.URLShortener) (addedRecord apptypes.URLShortener, created bool, err error) {
 	// Проверяем нужно ли сохранять запись в файловое хранилище
 	if !config.UseDatabase() {
-		return nil
+		return addedRecord, false, nil
 	}
 
-	if err := d.IsConnected(); err != nil {
-		return err
+	if err = d.IsConnected(); err != nil {
+		return addedRecord, false, err
 	}
 
-	_, err := d.dbPool.Exec("INSERT INTO urls (idx, short_id, original_url, user_id, deleted) VALUES ($1, $2, $3, $4, $5)", record.Idx, record.ShortID, record.OriginalURL, record.UserID, record.Deleted)
-	return err
+	// Проверяем, есть ли уже такая запись в хранилище по UserID+originalURL
+	err = d.dbPool.Get(&addedRecord, "SELECT idx, short_id, original_url, user_id, deleted FROM urls WHERE user_id = $1 AND original_url = $2", record.UserID, record.OriginalURL)
+	if err == nil {
+		return addedRecord, false, nil
+	}
+
+	// Если record.ShortID пустой, то генерируем новый
+	if record.ShortID == "" {
+		record.ShortID = shortener.Shorten(record.UserID + "@" + record.OriginalURL)
+	}
+
+	// Добавляем запись в хранилище
+	_, err = d.dbPool.Exec("INSERT INTO urls (idx, short_id, original_url, user_id, deleted) VALUES ($1, $2, $3, $4, $5)", record.Idx, record.ShortID, record.OriginalURL, record.UserID, record.Deleted)
+	if err == nil {
+		created = true
+		addedRecord = record
+	}
+
+	return addedRecord, created, err
 }
 
 // // AddRecords добавляет несколько записей в хранилище.

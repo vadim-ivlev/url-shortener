@@ -6,7 +6,6 @@ import (
 	"os"
 	"testing"
 
-	_ "github.com/lib/pq"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/vadim-ivlev/url-shortener/internal/apptypes"
@@ -39,12 +38,20 @@ func TestDeleteKeys(t *testing.T) {
 	err = PGStore.Clear()
 	assert.NoError(t, err)
 
-	err = PGStore.AddRecord(apptypes.URLShortener{Idx: 10, ShortID: "short_id10", OriginalURL: "original_url10", UserID: "user_t", Deleted: 0})
+	rec, added, err := PGStore.AddRecord(apptypes.URLShortener{Idx: 10, ShortID: "short_id10", OriginalURL: "original_url10", UserID: "user_t", Deleted: 0})
 	assert.NoError(t, err)
-	err = PGStore.AddRecord(apptypes.URLShortener{Idx: 11, ShortID: "short_id11", OriginalURL: "original_url11", UserID: "user_t", Deleted: 0})
+	assert.True(t, added)
+	assert.EqualValues(t, rec.ShortID, "short_id10")
+
+	rec, added, err = PGStore.AddRecord(apptypes.URLShortener{Idx: 11, ShortID: "short_id11", OriginalURL: "original_url11", UserID: "user_t", Deleted: 0})
 	assert.NoError(t, err)
-	err = PGStore.AddRecord(apptypes.URLShortener{Idx: 12, ShortID: "short_id12", OriginalURL: "original_url12", UserID: "user_t", Deleted: 0})
+	assert.True(t, added)
+	assert.EqualValues(t, rec.ShortID, "short_id11")
+
+	rec, added, err = PGStore.AddRecord(apptypes.URLShortener{Idx: 12, ShortID: "short_id12", OriginalURL: "original_url12", UserID: "user_t", Deleted: 0})
 	assert.NoError(t, err)
+	assert.True(t, added)
+	assert.EqualValues(t, rec.ShortID, "short_id12")
 
 	err = PGStore.DeleteRecords(context.Background(), "user_t", []any{"short_id10", "short_id11"})
 	assert.NoError(t, err)
