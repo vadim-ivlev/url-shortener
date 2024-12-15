@@ -13,7 +13,7 @@ type URLShortener struct {
 // MemStoreInterface - интерфейс для работы с хранилищем записей URLShortener.
 type MemStoreInterface interface {
 	// Clear очищает хранилище.
-	Clear()
+	Clear() (err error)
 	// AddRecord добавляет запись в хранилище.
 	AddRecord(record URLShortener) (addedRecord URLShortener, created bool, err error)
 	// AddRecords добавляет несколько записей в хранилище.
@@ -25,7 +25,7 @@ type MemStoreInterface interface {
 	// DeleteRecords удаляет несколько записей пользователя по их shortID.
 	DeleteRecords(userID string, shortIDs []any) error
 	// GetRecords возвращает все записи.
-	GetRecords() (records []URLShortener)
+	GetRecords() (records []URLShortener, err error)
 	// PrintRecords выводит содержимое нескольких записей.
 	PrintRecords(limit int)
 }

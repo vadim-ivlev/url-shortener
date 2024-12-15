@@ -1,7 +1,6 @@
 package lite
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"testing"
@@ -53,19 +52,22 @@ func TestDeleteKeys(t *testing.T) {
 	assert.True(t, added)
 	assert.EqualValues(t, rec.ShortID, "short_id12")
 
-	err = PGStore.DeleteRecords(context.Background(), "user_t", []any{"short_id10", "short_id11"})
+	err = PGStore.DeleteRecords("user_t", []any{"short_id10", "short_id11"})
 	assert.NoError(t, err)
 
-	record, _ := PGStore.GetRecordByShortID(context.Background(), "short_id10")
-	assert.EqualValues(t, record.Deleted, 1)
+	pRec, err := PGStore.GetRecordByShortID("short_id10")
+	assert.NoError(t, err)
+	assert.EqualValues(t, pRec.Deleted, 1)
 
-	record, _ = PGStore.GetRecordByShortID(context.Background(), "short_id11")
-	assert.EqualValues(t, record.Deleted, 1)
+	pRec, err = PGStore.GetRecordByShortID("short_id11")
+	assert.NoError(t, err)
+	assert.EqualValues(t, pRec.Deleted, 1)
 
-	record, _ = PGStore.GetRecordByShortID(context.Background(), "short_id12")
-	assert.EqualValues(t, record.Deleted, 0)
+	pRec, _ = PGStore.GetRecordByShortID("short_id12")
+	assert.NoError(t, err)
+	assert.EqualValues(t, pRec.Deleted, 0)
 
-	recs, err := PGStore.GetRecords(context.Background())
+	recs, err := PGStore.GetRecords()
 	assert.NoError(t, err)
 	fmt.Printf("recs: %+v\n", recs)
 

@@ -1,7 +1,6 @@
 package lite
 
 import (
-	"context"
 	"errors"
 
 	_ "github.com/glebarez/go-sqlite"
@@ -11,6 +10,7 @@ import (
 	"github.com/vadim-ivlev/url-shortener/internal/shortener"
 )
 
+// Проверка на соответствие интерфейсу
 // var _ apptypes.MemStoreInterface = (*dbstore)(nil)
 
 // DSN - строка подключения к базе данных
@@ -128,8 +128,25 @@ func (d *dbstore) AddRecord(record apptypes.URLShortener) (addedRecord apptypes.
 	return addedRecord, created, err
 }
 
-// // AddRecords добавляет несколько записей в хранилище.
-// AddRecords(records []URLShortener) (numAdded int, errs []error)
+// AddRecords добавляет массив записей в хранилище.
+//
+// Параметры:
+// - records - массив записей для добавления.
+//
+// Возвращает:
+// - количество добавленных записей.
+// - массив ошибок для записей которые не удалось добавить.
+func (d *dbstore) AddRecords(records []apptypes.URLShortener) (numAdded int, errs []error) {
+	for _, record := range records {
+		_, _, err := d.AddRecord(record)
+		if err != nil {
+			errs = append(errs, err)
+		} else {
+			numAdded++
+		}
+	}
+	return numAdded, errs
+}
 
 // UpdateRecord - обновляет запись в базе данных.
 //
@@ -154,16 +171,17 @@ func (d *dbstore) UpdateRecord(record apptypes.URLShortener) error {
 // GetRecordByShortID - возвращает запись из базы данных по short_id.
 //
 // Параметры:
-// - ctx - контекст
 // - shortID - короткий идентификатор
 //
 // Возвращает запись apptypes.URLShortener и ошибку.
-func (d *dbstore) GetRecordByShortID(ctx context.Context, shortID string) (record apptypes.URLShortener, err error) {
+func (d *dbstore) GetRecordByShortID(shortID string) (record *apptypes.URLShortener, err error) {
 	if err := d.IsConnected(); err != nil {
 		return record, err
 	}
 
-	err = d.dbPool.GetContext(ctx, &record, "SELECT idx, short_id, original_url, user_id, deleted FROM urls WHERE short_id = $1", shortID)
+	record = &apptypes.URLShortener{}
+
+	err = d.dbPool.Get(record, "SELECT idx, short_id, original_url, user_id, deleted FROM urls WHERE short_id = $1", shortID)
 	return record, err
 }
 
@@ -173,11 +191,10 @@ func (d *dbstore) GetRecordByShortID(ctx context.Context, shortID string) (recor
 // DeleteRecords - помечает записи в базе данных как удаленные
 // добавляя префикс "-" к short_id.
 // Параметры:
-// - ctx - контекст
 // - userID - идентификатор пользователя
 // - keys - массив ключей
 // Возвращает ошибку, если удаление не удалось.
-func (d *dbstore) DeleteRecords(ctx context.Context, userID string, keys []any) (err error) {
+func (d *dbstore) DeleteRecords(userID string, keys []any) (err error) {
 	if !config.UseDatabase() {
 		return nil
 	}
@@ -205,15 +222,12 @@ func (d *dbstore) DeleteRecords(ctx context.Context, userID string, keys []any) 
 
 // GetRecords - возвращает данные из базы данных в виде массива apptypes.URLShortener.
 //
-// Параметры:
-// - ctx - контекст
-//
 // Возвращает массив apptypes.URLShortener и ошибку.
-func (d *dbstore) GetRecords(ctx context.Context) (data []apptypes.URLShortener, err error) {
+func (d *dbstore) GetRecords() (data []apptypes.URLShortener, err error) {
 	data = []apptypes.URLShortener{}
 	if err := d.IsConnected(); err != nil {
 		return nil, err
 	}
-	err = d.dbPool.SelectContext(ctx, &data, "SELECT idx, short_id, original_url, user_id, deleted FROM urls")
+	err = d.dbPool.Select(&data, "SELECT idx, short_id, original_url, user_id, deleted FROM urls")
 	return data, err
 }

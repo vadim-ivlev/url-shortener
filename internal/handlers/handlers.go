@@ -509,7 +509,12 @@ func APIDeleteURLsHandler(w http.ResponseWriter, r *http.Request) {
 func deleteShortIDs(ctx context.Context, userID string, ids []any) (err error) {
 	app.MemStore.DeleteRecords(userID, ids)
 
-	err = filestorage.DumpRecords(app.MemStore.GetRecords())
+	records, err := app.MemStore.GetRecords()
+	if err != nil {
+		log.Warn().Err(err).Msg("Cannot get data from app.MemStore")
+	}
+
+	err = filestorage.DumpRecords(records)
 	if err != nil {
 		log.Warn().Err(err).Msg("Cannot save data to filestorage")
 	}

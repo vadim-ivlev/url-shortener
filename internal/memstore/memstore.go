@@ -41,7 +41,7 @@ func NewStore() *store {
 }
 
 // Clear очищает хранилище.
-func (u *store) Clear() {
+func (u *store) Clear() (err error) {
 	// очищаем файловое хранилище
 	filestorage.Clear()
 	// очищаем базу данных
@@ -52,6 +52,7 @@ func (u *store) Clear() {
 	// пересоздаем индексы
 	u.idxShortID = NewIndex(apptypes.ShortIDKeyFunc)
 	u.idxUserIDOriginalURL = NewIndex(apptypes.UserIDOriginalURLKeyFunc)
+	return err
 }
 
 // AddRecord добавляет запись в хранилище.
@@ -230,10 +231,10 @@ func (u *store) DeleteRecords(userID string, shortIDs []any) error {
 }
 
 // GetRecords возвращает все записи.
-func (u *store) GetRecords() (records []apptypes.URLShortener) {
+func (u *store) GetRecords() (records []apptypes.URLShortener, err error) {
 	u.mutex.Lock()
 	defer u.mutex.Unlock()
-	return u.records
+	return u.records, nil
 }
 
 // PrintRecords выводит содержимое хранилища в консоль.
