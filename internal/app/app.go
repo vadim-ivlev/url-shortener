@@ -12,10 +12,10 @@ import (
 
 	"github.com/vadim-ivlev/url-shortener/internal/apptypes"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
-	"github.com/vadim-ivlev/url-shortener/internal/db"
 	"github.com/vadim-ivlev/url-shortener/internal/filestorage"
 	"github.com/vadim-ivlev/url-shortener/internal/logger"
 	"github.com/vadim-ivlev/url-shortener/internal/memstore"
+	"github.com/vadim-ivlev/url-shortener/internal/pg"
 )
 
 // MemStore - хранилище записей URLShortener в оперативной памяти.
@@ -34,9 +34,9 @@ func InitApp() {
 	config.PrintParams()
 
 	// Создать хранилище базы данных
-	db.PGStore = db.New()
+	pg.PGStore = pg.New()
 	// Подключиться к базе данных
-	err := db.PGStore.Connect()
+	err := pg.PGStore.Connect()
 	if err != nil {
 		log.Error().Err(err).Msg("Cannot connect to DB")
 		return

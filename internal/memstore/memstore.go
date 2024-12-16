@@ -7,9 +7,9 @@ import (
 	"github.com/vadim-ivlev/url-shortener/internal/apptypes"
 	"github.com/vadim-ivlev/url-shortener/internal/arraystore"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
-	"github.com/vadim-ivlev/url-shortener/internal/db"
 	"github.com/vadim-ivlev/url-shortener/internal/filestorage"
 	"github.com/vadim-ivlev/url-shortener/internal/litestore"
+	"github.com/vadim-ivlev/url-shortener/internal/pg"
 )
 
 // Проверка на соответствие интерфейсу
@@ -38,7 +38,7 @@ func (m *memstore) Clear() error {
 	// очищаем файловое хранилище
 	filestorage.Clear()
 	// очищаем базу данных
-	db.PGStore.Clear()
+	pg.PGStore.Clear()
 	// очищаем хранилище
 	return actualStore.Clear()
 }
@@ -46,7 +46,7 @@ func (m *memstore) Clear() error {
 // AddRecord добавляет запись в хранилище.
 func (m *memstore) AddRecord(record apptypes.URLShortener) (addedRecord apptypes.URLShortener, created bool, err error) {
 	addedRecord, created, err = actualStore.AddRecord(record)
-	if err == nil {
+	if err == nil && created {
 		// Сохраняем запись в файловое хранилище
 		err0 := filestorage.AddRecord(addedRecord)
 		if err0 != nil {
@@ -54,7 +54,7 @@ func (m *memstore) AddRecord(record apptypes.URLShortener) (addedRecord apptypes
 		}
 
 		// Сохраняем в базу данных
-		err1 := db.PGStore.AddRecord(addedRecord)
+		err1 := pg.PGStore.AddRecord(addedRecord)
 		if err1 != nil {
 			log.Error().Err(err1).Msg("Add() AddRecord")
 		}
@@ -79,7 +79,7 @@ func (m *memstore) AddRecords(records []apptypes.URLShortener) (numAdded int, er
 	}
 
 	// Сохраняем записи в базу данных
-	numAdded1, errs1 := db.PGStore.AddRecords(records)
+	numAdded1, errs1 := pg.PGStore.AddRecords(records)
 	if len(errs1) > 0 {
 		log.Error().Msgf("AddRecords() db.PGStore.AddRecords: %v", errs1)
 	}
@@ -115,7 +115,7 @@ func (m *memstore) DeleteRecords(userID string, shortIDs []interface{}) (err err
 	}
 
 	// удаляем записи из базы данных
-	err1 := db.PGStore.DeleteRecords(context.Background(), userID, shortIDs)
+	err1 := pg.PGStore.DeleteRecords(context.Background(), userID, shortIDs)
 	if err1 != nil {
 		log.Error().Err(err1).Msg("DeleteRecords() db.PGStore.DeleteRecords")
 	}

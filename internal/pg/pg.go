@@ -1,4 +1,4 @@
-package db
+package pg
 
 import (
 	"context"
@@ -26,21 +26,21 @@ CREATE TABLE IF NOT EXISTS urls (
 `
 
 // PGStore - хранилище записей URLShortener в базе данных.
-var PGStore *dbstore
+var PGStore *pgstore
 
-// dbstore - структура для хранения данных в базе данных.
-type dbstore struct {
+// pgstore - структура для хранения данных в базе данных.
+type pgstore struct {
 	// dbPool - пул соединений с базой данных
 	dbPool *sqlx.DB
 }
 
 // New создает новое хранилище Urls.
-func New() *dbstore {
-	return &dbstore{}
+func New() *pgstore {
+	return &pgstore{}
 }
 
 // Connect - устанавливает соединение с базой данных
-func (d *dbstore) Connect() (err error) {
+func (d *pgstore) Connect() (err error) {
 	// Проверяем нужно ли подключаться к базе данных
 	if !config.UseDatabase() {
 		return nil
@@ -56,7 +56,7 @@ func (d *dbstore) Connect() (err error) {
 }
 
 // Disconnect - закрывает соединение с базой данных
-func (d *dbstore) Disconnect() {
+func (d *pgstore) Disconnect() {
 	if d.dbPool != nil {
 		d.dbPool.Close()
 	}
@@ -64,7 +64,7 @@ func (d *dbstore) Disconnect() {
 }
 
 // IsConnected - проверяет, установлено ли соединение с базой данных
-func (d *dbstore) IsConnected() error {
+func (d *pgstore) IsConnected() error {
 	// return db != nil && db.Ping() == nil
 	if d.dbPool == nil {
 		return errors.New("no connection to DB")
@@ -75,7 +75,7 @@ func (d *dbstore) IsConnected() error {
 // Clear - очищает таблицу urls
 //
 // Возвращает ошибку, если очистка не удалась.
-func (d *dbstore) Clear() error {
+func (d *pgstore) Clear() error {
 	if !config.UseDatabase() {
 		return nil
 	}
@@ -93,7 +93,7 @@ func (d *dbstore) Clear() error {
 // - record - запись для сохранения.
 //
 // Возвращает ошибку, если запись не удалась.
-func (d *dbstore) AddRecord(record apptypes.URLShortener) (err error) {
+func (d *pgstore) AddRecord(record apptypes.URLShortener) (err error) {
 	// Проверяем нужно ли сохранять запись в файловое хранилище
 	if !config.UseDatabase() {
 		return nil
@@ -108,7 +108,7 @@ func (d *dbstore) AddRecord(record apptypes.URLShortener) (err error) {
 }
 
 // AddRecords добавляет несколько записей в хранилище.
-func (d *dbstore) AddRecords(records []apptypes.URLShortener) (numAdded int, errs []error) {
+func (d *pgstore) AddRecords(records []apptypes.URLShortener) (numAdded int, errs []error) {
 	for _, record := range records {
 		err := d.AddRecord(record)
 		if err != nil {
@@ -126,7 +126,7 @@ func (d *dbstore) AddRecords(records []apptypes.URLShortener) (numAdded int, err
 // - record - запись для сохранения.
 //
 // Возвращает ошибку, если запись не удалась.
-func (d *dbstore) UpdateRecord(record apptypes.URLShortener) error {
+func (d *pgstore) UpdateRecord(record apptypes.URLShortener) error {
 	// Проверяем нужно ли сохранять запись в файловое хранилище
 	if !config.UseDatabase() {
 		return nil
@@ -147,7 +147,7 @@ func (d *dbstore) UpdateRecord(record apptypes.URLShortener) error {
 // - shortID - короткий идентификатор
 //
 // Возвращает запись apptypes.URLShortener и ошибку.
-func (d *dbstore) GetRecordByShortID(ctx context.Context, shortID string) (record apptypes.URLShortener, err error) {
+func (d *pgstore) GetRecordByShortID(ctx context.Context, shortID string) (record apptypes.URLShortener, err error) {
 	if err := d.IsConnected(); err != nil {
 		return record, err
 	}
@@ -166,7 +166,7 @@ func (d *dbstore) GetRecordByShortID(ctx context.Context, shortID string) (recor
 // - userID - идентификатор пользователя
 // - keys - массив ключей
 // Возвращает ошибку, если удаление не удалось.
-func (d *dbstore) DeleteRecords(ctx context.Context, userID string, keys []any) (err error) {
+func (d *pgstore) DeleteRecords(ctx context.Context, userID string, keys []any) (err error) {
 	if !config.UseDatabase() {
 		return nil
 	}
@@ -198,7 +198,7 @@ func (d *dbstore) DeleteRecords(ctx context.Context, userID string, keys []any) 
 // - ctx - контекст
 //
 // Возвращает массив apptypes.URLShortener и ошибку.
-func (d *dbstore) GetRecords(ctx context.Context) (data []apptypes.URLShortener, err error) {
+func (d *pgstore) GetRecords(ctx context.Context) (data []apptypes.URLShortener, err error) {
 	if err := d.IsConnected(); err != nil {
 		return nil, err
 	}

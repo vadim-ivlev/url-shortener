@@ -17,8 +17,8 @@ import (
 	"github.com/vadim-ivlev/url-shortener/internal/apptypes"
 	"github.com/vadim-ivlev/url-shortener/internal/auth"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
-	"github.com/vadim-ivlev/url-shortener/internal/db"
 	"github.com/vadim-ivlev/url-shortener/internal/logger"
+	"github.com/vadim-ivlev/url-shortener/internal/pg"
 	"github.com/vadim-ivlev/url-shortener/internal/shortener"
 )
 
@@ -226,13 +226,13 @@ func TestPingHandler(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/ping", nil)
 
 	// отключенная БД
-	db.PGStore.Disconnect()
+	pg.PGStore.Disconnect()
 	rec := httptest.NewRecorder()
 	PingHandler(rec, req)
 	assert.Equal(t, http.StatusInternalServerError, rec.Code)
 
 	// подключенная БД
-	db.PGStore.Connect()
+	pg.PGStore.Connect()
 	rec = httptest.NewRecorder()
 	PingHandler(rec, req)
 	assert.Equal(t, http.StatusOK, rec.Code)
@@ -286,7 +286,7 @@ func TestAPIShortenBatchHandler(t *testing.T) {
 
 	config.ParseEnv()
 
-	err := db.PGStore.Connect()
+	err := pg.PGStore.Connect()
 	if err != nil {
 		log.Error().Err(err).Msg("Error")
 		return
@@ -412,7 +412,7 @@ func TestAPIShortenBatchHandler(t *testing.T) {
 				var found bool
 
 				// найти shortID в базе данных
-				_, err := db.PGStore.GetRecordByShortID(context.Background(), shortID)
+				_, err := pg.PGStore.GetRecordByShortID(context.Background(), shortID)
 				if err == nil {
 					found = true
 				}

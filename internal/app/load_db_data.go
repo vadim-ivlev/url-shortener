@@ -7,7 +7,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"github.com/vadim-ivlev/url-shortener/internal/config"
-	"github.com/vadim-ivlev/url-shortener/internal/db"
+	"github.com/vadim-ivlev/url-shortener/internal/pg"
 )
 
 // LoadDBDataToStorage - загружает данные из базы данных в storage.
@@ -21,11 +21,11 @@ func LoadDBDataToStorage(ctx context.Context) (err error) {
 	}
 
 	// Проверяем, что есть соединение с базой данных
-	if err := db.PGStore.IsConnected(); err != nil {
+	if err := pg.PGStore.IsConnected(); err != nil {
 		log.Error().Err(err).Msg("LoadDBDataToStorage(). Cannot load data from DB")
 		return err
 	}
-	records, err := db.PGStore.GetRecords(ctx)
+	records, err := pg.PGStore.GetRecords(ctx)
 	if err != nil {
 		log.Warn().Err(err).Msg("loadDataFromDB(). Cannot get data from DB")
 		return err
