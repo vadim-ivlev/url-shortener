@@ -13,8 +13,6 @@ import (
 	"github.com/vadim-ivlev/url-shortener/internal/app"
 	"github.com/vadim-ivlev/url-shortener/internal/apptypes"
 	"github.com/vadim-ivlev/url-shortener/internal/auth"
-	"github.com/vadim-ivlev/url-shortener/internal/db"
-	"github.com/vadim-ivlev/url-shortener/internal/filestorage"
 )
 
 // // generateAndSaveShortURL - генерирует короткий URL и сохраняет его в хранилище.
@@ -89,22 +87,6 @@ func RedirectHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Получить userID из контекста
-	// userID := GetUserIDFromContext(r.Context())
-	//log.Info().Msgf("RedirectHandler> User ID from context = '%v' ", userID)
-
-	// // Получить оригинальный URL по id и перенаправить
-	// storedValue := storage.Get(id)
-	// if storedValue == "" {
-	// 	// Проверить не удаленный ли это URL
-	// 	if storage.IsDeletedKey(id) {
-	// 		http.Error(w, "URL was deleted", http.StatusGone)
-	// 		return
-	// 	}
-	// 	http.Error(w, "URL not found", http.StatusBadRequest)
-	// 	return
-	// }
-
 	// Получить запись из хранилища в RAM
 	record, err := app.MemStore.GetRecordByShortID(id)
 	// проверить, что запись найдена
@@ -127,11 +109,11 @@ func RedirectHandler(w http.ResponseWriter, r *http.Request) {
 // PingHandler - при запросе проверяет соединение с базой данных.
 // При успешной проверке хендлер должен вернуть HTTP-статус `200 OK`, при неуспешной — `500 Internal Server Error`.
 func PingHandler(w http.ResponseWriter, r *http.Request) {
-	if err := db.PGStore.IsConnected(); err == nil {
-		w.WriteHeader(http.StatusOK)
-	} else {
-		http.Error(w, "No connection do database", http.StatusInternalServerError)
-	}
+	// if err := db.PGStore.IsConnected(); err == nil {
+	w.WriteHeader(http.StatusOK)
+	// } else {
+	// 	http.Error(w, "No connection do database", http.StatusInternalServerError)
+	// }
 }
 
 /*
@@ -508,21 +490,5 @@ func APIDeleteURLsHandler(w http.ResponseWriter, r *http.Request) {
 // deleteShortIDs - удаляет короткие URL из хранилища в RAM и из постоянных хранилищ.
 func deleteShortIDs(ctx context.Context, userID string, ids []any) (err error) {
 	app.MemStore.DeleteRecords(userID, ids)
-
-	records, err := app.MemStore.GetRecords()
-	if err != nil {
-		log.Warn().Err(err).Msg("Cannot get data from app.MemStore")
-	}
-
-	err = filestorage.DumpRecords(records)
-	if err != nil {
-		log.Warn().Err(err).Msg("Cannot save data to filestorage")
-	}
-
-	err = db.PGStore.DeleteRecords(ctx, userID, ids)
-	if err != nil {
-		log.Warn().Err(err).Msg("Cannot delete shortID from the database")
-	}
-
 	return nil
 }

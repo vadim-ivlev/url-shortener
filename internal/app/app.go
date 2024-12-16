@@ -48,8 +48,12 @@ func InitApp() {
 	//MemStore.Clear()
 	filestorage.Clear()
 
+}
+
+// LoadDataToMemStore загружает данные из базы данных в хранилище.
+func LoadDataToMemStore() {
 	// Загрузить данные из файлового хранилища
-	err = LoadFileDataToStorage()
+	err := LoadFileDataToStorage()
 	if err != nil {
 		log.Warn().Err(err).Msg("Cannot load data to storage")
 	}

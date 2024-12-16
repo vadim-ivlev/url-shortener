@@ -9,6 +9,9 @@ func main() {
 	// Инициализировать приложение
 	app.InitApp()
 
+	// Загрузить данные в хранилище
+	app.LoadDataToMemStore()
+
 	// Запустить сервер
 	server.ServeChi()
 }

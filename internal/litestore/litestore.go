@@ -8,7 +8,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/zerolog/log"
 	"github.com/vadim-ivlev/url-shortener/internal/apptypes"
-	"github.com/vadim-ivlev/url-shortener/internal/config"
 	"github.com/vadim-ivlev/url-shortener/internal/shortener"
 )
 
@@ -47,10 +46,6 @@ func New() *dbstore {
 
 // Connect - устанавливает соединение с базой данных
 func (d *dbstore) Connect() (err error) {
-	// Проверяем нужно ли подключаться к базе данных
-	if !config.UseDatabase() {
-		return nil
-	}
 	d.Disconnect()
 	d.dbPool, err = sqlx.Connect("sqlite", DSN)
 	if err != nil {
@@ -82,10 +77,6 @@ func (d *dbstore) IsConnected() error {
 //
 // Возвращает ошибку, если очистка не удалась.
 func (d *dbstore) Clear() error {
-	if !config.UseDatabase() {
-		return nil
-	}
-
 	if err := d.IsConnected(); err != nil {
 		return err
 	}
@@ -100,11 +91,6 @@ func (d *dbstore) Clear() error {
 //
 // Возвращает ошибку, если запись не удалась.
 func (d *dbstore) AddRecord(record apptypes.URLShortener) (addedRecord apptypes.URLShortener, created bool, err error) {
-	// Проверяем нужно ли сохранять запись в файловое хранилище
-	if !config.UseDatabase() {
-		return addedRecord, false, nil
-	}
-
 	if err = d.IsConnected(); err != nil {
 		return addedRecord, false, err
 	}
@@ -158,11 +144,6 @@ func (d *dbstore) AddRecords(records []apptypes.URLShortener) (numAdded int, err
 //
 // Возвращает ошибку, если запись не удалась.
 func (d *dbstore) UpdateRecord(record apptypes.URLShortener) error {
-	// Проверяем нужно ли сохранять запись в файловое хранилище
-	if !config.UseDatabase() {
-		return nil
-	}
-
 	if err := d.IsConnected(); err != nil {
 		return err
 	}
@@ -213,10 +194,6 @@ func (d *dbstore) GetRecordsByUserID(userID string) (records []apptypes.URLShort
 // - keys - массив ключей
 // Возвращает ошибку, если удаление не удалось.
 func (d *dbstore) DeleteRecords(userID string, keys []any) (err error) {
-	if !config.UseDatabase() {
-		return nil
-	}
-
 	if err := d.IsConnected(); err != nil {
 		return err
 	}

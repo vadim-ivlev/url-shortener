@@ -10,6 +10,9 @@ import (
 	"github.com/vadim-ivlev/url-shortener/internal/config"
 )
 
+// Проверка на соответствие интерфейсу
+// var _ apptypes.MemStoreInterface = (*dbstore)(nil)
+
 var initSQL = `
 -- urls - хранит список уникальных URL и их коротких ключей
 CREATE TABLE IF NOT EXISTS urls (
