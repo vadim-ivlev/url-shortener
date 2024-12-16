@@ -219,10 +219,24 @@ func getID(url string) (id string) {
 
 func TestPingHandler(t *testing.T) {
 	skipCI(t)
+
+	os.Setenv("DATABASE_DSN", "postgres://postgres:postgres@localhost:5432/praktikum?sslmode=disable")
+	config.ParseEnv()
+
 	req := httptest.NewRequest(http.MethodGet, "/ping", nil)
+
+	// отключенная БД
+	db.PGStore.Disconnect()
 	rec := httptest.NewRecorder()
 	PingHandler(rec, req)
+	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+
+	// подключенная БД
+	db.PGStore.Connect()
+	rec = httptest.NewRecorder()
+	PingHandler(rec, req)
 	assert.Equal(t, http.StatusOK, rec.Code)
+
 }
 
 /*

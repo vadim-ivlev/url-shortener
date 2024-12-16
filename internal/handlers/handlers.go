@@ -13,6 +13,7 @@ import (
 	"github.com/vadim-ivlev/url-shortener/internal/app"
 	"github.com/vadim-ivlev/url-shortener/internal/apptypes"
 	"github.com/vadim-ivlev/url-shortener/internal/auth"
+	"github.com/vadim-ivlev/url-shortener/internal/db"
 )
 
 // // generateAndSaveShortURL - генерирует короткий URL и сохраняет его в хранилище.
@@ -109,11 +110,11 @@ func RedirectHandler(w http.ResponseWriter, r *http.Request) {
 // PingHandler - при запросе проверяет соединение с базой данных.
 // При успешной проверке хендлер должен вернуть HTTP-статус `200 OK`, при неуспешной — `500 Internal Server Error`.
 func PingHandler(w http.ResponseWriter, r *http.Request) {
-	// if err := db.PGStore.IsConnected(); err == nil {
-	w.WriteHeader(http.StatusOK)
-	// } else {
-	// 	http.Error(w, "No connection do database", http.StatusInternalServerError)
-	// }
+	if err := db.PGStore.IsConnected(); err == nil {
+		w.WriteHeader(http.StatusOK)
+	} else {
+		http.Error(w, "No connection do database", http.StatusInternalServerError)
+	}
 }
 
 /*
