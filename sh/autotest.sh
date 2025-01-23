@@ -121,3 +121,11 @@ shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration15$ \
     -binary-path=cmd/shortener/shortener \
     -database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable'
 fi
+
+if [ -z "$@" ] || [ "$@" -eq 16 ]; then
+echo ; echo ; echo "Code Increment #16 tests ------------------------"
+shortenertestbeta-darwin-arm64 -test.v -test.run=^TestIteration16$ \
+    -source-path=. \
+
+fi
+
